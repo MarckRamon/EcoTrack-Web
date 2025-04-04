@@ -8,9 +8,26 @@ import {
   Container,
   Link,
 } from '@mui/material';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
+import api from './api/axios';
 import './AdminLogin.css';
+
+// Function to decode JWT token
+const decodeToken = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+};
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -34,15 +51,48 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, credentials.emailOrPhone, credentials.password);
-      navigate('/admin/dashboard');
+      const response = await api.post('/users/login', {
+        email: credentials.emailOrPhone,
+        password: credentials.password
+      });
+
+      console.log('Login response:', response.data);
+
+      const { token } = response.data;
+      
+      if (!token) {
+        throw new Error('No token received from server');
+      }
+
+      // Decode the token to get user information
+      const decodedToken = decodeToken(token);
+      console.log('Decoded token:', decodedToken);
+
+      if (!decodedToken) {
+        throw new Error('Invalid token received');
+      }
+
+      // Extract role from decoded token
+      const userRole = decodedToken.role;
+      console.log('User role from token:', userRole);
+      
+      // Case-insensitive role check
+      if (userRole && typeof userRole === 'string' && userRole.toLowerCase() === 'admin') {
+        // Store the authentication token and user info
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({
+          email: credentials.emailOrPhone,
+          role: userRole
+        }));
+        
+        navigate('/admin/dashboard');
+      } else {
+        console.log('Role check failed. Received role:', userRole);
+        setError('Access denied. Only administrators are allowed to login.');
+      }
     } catch (error) {
-      console.error('Error:', error);
-      setError(
-        error.code === 'auth/invalid-credential'
-          ? 'Invalid email or password'
-          : 'Failed to log in'
-      );
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -233,40 +283,6 @@ const AdminLogin = () => {
             >
               {loading ? 'Logging in...' : 'Log in'}
             </Button>
-
-            <Box sx={{ mt: 3, pt: 3, borderTop: '1px solid #E5E7EB' }}>
-              <Typography sx={{ 
-                color: '#6B7280',
-                fontSize: '14px',
-                mb: 2,
-              }}>
-                Or login with
-              </Typography>
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={
-                  <img 
-                    src="https://www.google.com/favicon.ico" 
-                    alt="Google" 
-                    style={{ width: 18, height: 18 }} 
-                  />
-                }
-                sx={{
-                  color: '#374151',
-                  borderColor: '#E5E7EB',
-                  textTransform: 'none',
-                  fontSize: '14px',
-                  py: 1,
-                  '&:hover': {
-                    borderColor: '#D1D5DB',
-                    bgcolor: '#F9FAFB',
-                  }
-                }}
-              >
-                Continue with Google
-              </Button>
-            </Box>
           </form>
         </Box>
       </Container>
