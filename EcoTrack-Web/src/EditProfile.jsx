@@ -1,27 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
   TextField,
   Button,
-  MenuItem,
-  Select,
-  FormControl,
   Grid,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout';
+import api from './api/axios';
 
 const EditProfile = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: '',
-    nickName: '',
-    gender: '',
-    country: '',
-    language: '',
-    timeZone: '',
+    firstName: '',
+    lastName: '',
+    email: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/admin/login');
+          return;
+        }
+
+        // Get user data from localStorage as fallback
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        setFormData({
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+        });
+
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setSnackbar({
+          open: true,
+          message: 'Error loading profile data',
+          severity: 'error',
+        });
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -30,8 +63,59 @@ const EditProfile = () => {
     });
   };
 
-  const handleSave = () => {
-    console.log('Form data:', formData);
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/admin/login');
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/admin/login');
+        return;
+      }
+
+      // Store updated user data in localStorage
+      const userData = {
+        ...JSON.parse(localStorage.getItem('user') || '{}'),
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+      };
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      // Update the profile display in AdminLayout
+      const event = new CustomEvent('profileUpdated', {
+        detail: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+        }
+      });
+      window.dispatchEvent(event);
+
+      setSnackbar({
+        open: true,
+        message: 'Profile updated successfully',
+        severity: 'success',
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setSnackbar({
+        open: true,
+        message: error.message || 'Error updating profile',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
   };
 
   return (
@@ -43,192 +127,117 @@ const EditProfile = () => {
         bgcolor: 'white',
         borderRadius: 2,
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        p: 3,
       }}>
-        {/* Header */}
         <Box sx={{ 
-          p: { xs: 2, sm: 3 },
-          borderBottom: '1px solid #e5e7eb',
-          display: 'flex',
+          display: 'flex', 
+          justifyContent: 'space-between', 
           alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: { xs: 'wrap', sm: 'nowrap' },
-          gap: 2,
+          mb: 3 
         }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 2,
-            width: { xs: '100%', sm: 'auto' },
-          }}>
-            <Box
-              component="img"
-              src="/migz.jpg"
-              sx={{
-                width: { xs: 48, sm: 64 },
-                height: { xs: 48, sm: 64 },
-                borderRadius: '50%',
-                objectFit: 'cover',
-              }}
-            />
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>
-                Miguel Jaca
-              </Typography>
-              <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-                miggyjaca@gmail.com
-              </Typography>
-            </Box>
-          </Box>
-          <Box sx={{ 
-            display: 'flex', 
-            gap: 2,
-            width: { xs: '100%', sm: 'auto' },
-          }}>
-            <Button
-              variant="contained"
-              fullWidth={false}
-              sx={{
-                flex: { xs: 1, sm: 'none' },
-                bgcolor: '#4CAF50',
-                '&:hover': { bgcolor: '#43A047' },
-                px: 3,
-                height: 40,
-              }}
-              onClick={handleSave}
-            >
-              Save
-            </Button>
-            <Button
-              variant="outlined"
-              fullWidth={false}
-              sx={{
-                flex: { xs: 1, sm: 'none' },
-                color: '#DC2626',
+          <Typography variant="h5" sx={{ color: '#333', fontWeight: 600 }}>
+            Edit Profile
+          </Typography>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={handleLogout}
+            sx={{
+              textTransform: 'none',
+              borderColor: '#DC2626',
+              color: '#DC2626',
+              '&:hover': {
+                bgcolor: '#FEE2E2',
                 borderColor: '#DC2626',
-                '&:hover': {
-                  bgcolor: '#FEE2E2',
-                  borderColor: '#DC2626',
-                },
-                px: 3,
-                height: 40,
-              }}
-              onClick={() => navigate('/admin/login')}
-            >
-              Logout
-            </Button>
-          </Box>
+              },
+            }}
+          >
+            Logout
+          </Button>
         </Box>
 
-        {/* Form */}
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Full Name
-              </Typography>
-              <TextField
-                fullWidth
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="Your Full Name"
-                size="small"
-                sx={{ bgcolor: 'white' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Nick Name
-              </Typography>
-              <TextField
-                fullWidth
-                name="nickName"
-                value={formData.nickName}
-                onChange={handleChange}
-                placeholder="Your Nick Name"
-                size="small"
-                sx={{ bgcolor: 'white' }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Gender
-              </Typography>
-              <FormControl fullWidth size="small">
-                <Select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  displayEmpty
-                  sx={{ bgcolor: 'white' }}
-                >
-                  <MenuItem value="">Select Gender</MenuItem>
-                  <MenuItem value="male">Male</MenuItem>
-                  <MenuItem value="female">Female</MenuItem>
-                  <MenuItem value="other">Other</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Country
-              </Typography>
-              <FormControl fullWidth size="small">
-                <Select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleChange}
-                  displayEmpty
-                  sx={{ bgcolor: 'white' }}
-                >
-                  <MenuItem value="">Select Country</MenuItem>
-                  <MenuItem value="philippines">Philippines</MenuItem>
-                  <MenuItem value="usa">United States</MenuItem>
-                  <MenuItem value="uk">United Kingdom</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Language
-              </Typography>
-              <FormControl fullWidth size="small">
-                <Select
-                  name="language"
-                  value={formData.language}
-                  onChange={handleChange}
-                  displayEmpty
-                  sx={{ bgcolor: 'white' }}
-                >
-                  <MenuItem value="">Select Language</MenuItem>
-                  <MenuItem value="english">English</MenuItem>
-                  <MenuItem value="filipino">Filipino</MenuItem>
-                  <MenuItem value="spanish">Spanish</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-                Time Zone
-              </Typography>
-              <FormControl fullWidth size="small">
-                <Select
-                  name="timeZone"
-                  value={formData.timeZone}
-                  onChange={handleChange}
-                  displayEmpty
-                  sx={{ bgcolor: 'white' }}
-                >
-                  <MenuItem value="">Select Time Zone</MenuItem>
-                  <MenuItem value="asia/manila">(GMT+8:00) Manila</MenuItem>
-                  <MenuItem value="america/new_york">(GMT-5:00) New York</MenuItem>
-                  <MenuItem value="europe/london">(GMT+0:00) London</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
+              First Name
+            </Typography>
+            <TextField
+              fullWidth
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              variant="outlined"
+              size="small"
+              sx={{ bgcolor: 'white' }}
+            />
           </Grid>
-        </Box>
+
+          <Grid item xs={12} sm={6}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
+              Last Name
+            </Typography>
+            <TextField
+              fullWidth
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              variant="outlined"
+              size="small"
+              sx={{ bgcolor: 'white' }}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
+              Email
+            </Typography>
+            <TextField
+              fullWidth
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              variant="outlined"
+              size="small"
+              sx={{ bgcolor: 'white' }}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={loading}
+              sx={{
+                bgcolor: '#4CAF50',
+                '&:hover': {
+                  bgcolor: '#45a049',
+                },
+                textTransform: 'none',
+                px: 4,
+                py: 1,
+              }}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Grid>
+        </Grid>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </AdminLayout>
   );
 };

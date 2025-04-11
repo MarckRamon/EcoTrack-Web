@@ -29,9 +29,12 @@ api.interceptors.response.use(
     if (error.response) {
       // Handle 401 Unauthorized errors
       if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/admin/login';
+        // Only force logout if the request is not for the profile page
+        if (!error.config.url.includes('/users/profile')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/admin/login';
+        }
       }
       // Return server error message if available
       if (error.response.data && error.response.data.message) {

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   TrendingUp,
   LocationOn,
@@ -11,6 +11,80 @@ import {
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [userProfile, setUserProfile] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+  });
+
+  // Function to check if menu item is active
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  // Menu item styles
+  const getMenuItemStyles = (path) => ({
+    display: 'flex',
+    alignItems: 'center',
+    p: 1.5,
+    borderRadius: 1,
+    mb: 1,
+    cursor: 'pointer',
+    bgcolor: isActive(path) ? '#e6f4ea' : 'transparent',
+    '&:hover': { 
+      bgcolor: isActive(path) ? '#e6f4ea' : '#f1f5f9' 
+    },
+  });
+
+  // Icon styles
+  const getIconStyles = (path) => ({
+    color: isActive(path) ? '#4CAF50' : '#475569',
+    mr: 2
+  });
+
+  // Text styles
+  const getTextStyles = (path) => ({
+    color: isActive(path) ? '#4CAF50' : '#475569',
+    fontSize: '16px',
+    fontWeight: isActive(path) ? 600 : 400,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+  });
+
+  useEffect(() => {
+    const fetchUserProfile = () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/admin/login');
+          return;
+        }
+
+        const userData = JSON.parse(localStorage.getItem('user') || '{}');
+        setUserProfile({
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+        });
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    const handleProfileUpdate = (event) => {
+      setUserProfile(event.detail);
+    };
+
+    // Initial profile fetch
+    fetchUserProfile();
+
+    // Listen for profile updates
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
+  }, [navigate]);
 
   return (
     <Box 
@@ -56,110 +130,51 @@ const AdminLayout = ({ children }) => {
         </Box>
 
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1.5,
-            borderRadius: 1,
-            mb: 1,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#f1f5f9' },
-          }}
+          sx={getMenuItemStyles('/admin/dashboard')}
           onClick={() => navigate('/admin/dashboard')}
         >
-          <TrendingUp sx={{ color: '#475569', mr: 2 }} />
-          <Typography sx={{ 
-            color: '#475569', 
-            fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-          }}>
+          <TrendingUp sx={getIconStyles('/admin/dashboard')} />
+          <Typography sx={getTextStyles('/admin/dashboard')}>
             Dashboard
           </Typography>
         </Box>
 
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1.5,
-            borderRadius: 1,
-            mb: 1,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#f1f5f9' },
-          }}
+          sx={getMenuItemStyles('/admin/collection-points')}
           onClick={() => navigate('/admin/collection-points')}
         >
-          <LocationOn sx={{ color: '#475569', mr: 2 }} />
-          <Typography sx={{ 
-            color: '#475569',
-            fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-          }}>
+          <LocationOn sx={getIconStyles('/admin/collection-points')} />
+          <Typography sx={getTextStyles('/admin/collection-points')}>
             Collection Points
           </Typography>
         </Box>
 
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1.5,
-            borderRadius: 1,
-            mb: 1,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#f1f5f9' },
-          }}
+          sx={getMenuItemStyles('/admin/schedule')}
           onClick={() => navigate('/admin/schedule')}
         >
-          <CalendarToday sx={{ color: '#475569', mr: 2 }} />
-          <Typography sx={{ 
-            color: '#475569',
-            fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-          }}>
+          <CalendarToday sx={getIconStyles('/admin/schedule')} />
+          <Typography sx={getTextStyles('/admin/schedule')}>
             Collection Schedule
           </Typography>
         </Box>
 
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1.5,
-            borderRadius: 1,
-            mb: 1,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#f1f5f9' },
-          }}
+          sx={getMenuItemStyles('/admin/users')}
           onClick={() => navigate('/admin/users')}
         >
-          <Person sx={{ color: '#475569', mr: 2 }} />
-          <Typography sx={{ 
-            color: '#475569',
-            fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-          }}>
+          <Person sx={getIconStyles('/admin/users')} />
+          <Typography sx={getTextStyles('/admin/users')}>
             Users
           </Typography>
         </Box>
 
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            p: 1.5,
-            borderRadius: 1,
-            cursor: 'pointer',
-            '&:hover': { bgcolor: '#f1f5f9' },
-          }}
+          sx={getMenuItemStyles('/admin/job-orders')}
           onClick={() => navigate('/admin/job-orders')}
         >
-          <Assignment sx={{ color: '#475569', mr: 2 }} />
-          <Typography sx={{ 
-            color: '#475569',
-            fontSize: '16px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
-          }}>
+          <Assignment sx={getIconStyles('/admin/job-orders')} />
+          <Typography sx={getTextStyles('/admin/job-orders')}>
             Job Order Request
           </Typography>
         </Box>
@@ -176,6 +191,12 @@ const AdminLayout = ({ children }) => {
                 bgcolor: '#f3f4f6',
                 borderRadius: 1,
               },
+              ...(isActive('/admin/profile') && {
+                bgcolor: '#e6f4ea',
+                '&:hover': {
+                  bgcolor: '#e6f4ea',
+                },
+              }),
             }}
             onClick={() => navigate('/admin/profile')}
           >
@@ -190,13 +211,15 @@ const AdminLayout = ({ children }) => {
             <Box>
               <Typography 
                 sx={{ 
-                  color: '#333',
+                  color: isActive('/admin/profile') ? '#4CAF50' : '#333',
                   fontSize: '14px',
-                  fontWeight: 500,
+                  fontWeight: isActive('/admin/profile') ? 600 : 500,
                   lineHeight: 1.2
                 }}
               >
-                Miguel
+                {userProfile.firstName && userProfile.lastName 
+                  ? `${userProfile.firstName} ${userProfile.lastName}`
+                  : 'User Profile'}
               </Typography>
               <Typography 
                 sx={{ 
@@ -205,7 +228,7 @@ const AdminLayout = ({ children }) => {
                   lineHeight: 1.2
                 }}
               >
-                miggyjaca@gmail.com
+                {userProfile.email || 'No email set'}
               </Typography>
             </Box>
           </Box>

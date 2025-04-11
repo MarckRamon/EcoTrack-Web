@@ -5,6 +5,8 @@ import AdminDashboard from './AdminDashboard';
 import ForgotPassword from './ForgotPassword';
 import SetNewPassword from './SetNewPassword';
 import EditProfile from './EditProfile';
+import Users from './Users';
+import JobOrderRequest from './JobOrderRequest';
 import './App.css';
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
         <Route path="/admin/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/set-new-password" element={<SetNewPassword />} />
         <Route path="/admin/profile" element={<EditProfile />} />
+        <Route path="/admin/users" element={<Users />} />
+        <Route path="/admin/job-orders" element={<JobOrderRequest />} />
       </Routes>
     </Router>
   );
