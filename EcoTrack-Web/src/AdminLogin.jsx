@@ -52,11 +52,9 @@ const AdminLogin = () => {
 
     try {
       const response = await api.post('/users/login', {
-        email: credentials.emailOrPhone,
+        email: credentials.emailOrPhone.trim(),
         password: credentials.password
       });
-
-      console.log('Login response:', response.data);
 
       const { token } = response.data;
       
@@ -64,9 +62,11 @@ const AdminLogin = () => {
         throw new Error('No token received from server');
       }
 
+      // Store the token immediately
+      localStorage.setItem('token', token);
+
       // Decode the token to get user information
       const decodedToken = decodeToken(token);
-      console.log('Decoded token:', decodedToken);
 
       if (!decodedToken) {
         throw new Error('Invalid token received');
@@ -74,25 +74,40 @@ const AdminLogin = () => {
 
       // Extract role from decoded token
       const userRole = decodedToken.role;
-      console.log('User role from token:', userRole);
       
-      // Case-insensitive role check
-      if (userRole && typeof userRole === 'string' && userRole.toLowerCase() === 'admin') {
-        // Store the authentication token and user info
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({
-          email: credentials.emailOrPhone,
-          role: userRole
-        }));
+      if (userRole) {
+        const normalizedRole = userRole.toLowerCase().trim();
         
-        navigate('/admin/dashboard');
+        if (normalizedRole === 'admin' || 
+            normalizedRole === 'administrator' || 
+            normalizedRole === 'superadmin') {
+          // Store user info
+          localStorage.setItem('user', JSON.stringify({
+            email: credentials.emailOrPhone.trim(),
+            role: normalizedRole
+          }));
+          
+          navigate('/admin/dashboard');
+        } else {
+          setError('Access denied. Only administrators are allowed to login.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
       } else {
-        console.log('Role check failed. Received role:', userRole);
-        setError('Access denied. Only administrators are allowed to login.');
+        setError('Access denied. No role found in token.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError(error.message || 'Invalid email or password. Please try again.');
+      if (error.response?.status === 403) {
+        setError('Access denied. Please check your credentials and permissions.');
+      } else if (error.response?.status === 401) {
+        setError('Invalid email or password. Please check your credentials.');
+      } else {
+        setError('Unable to connect to the server. Please try again.');
+      }
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
     } finally {
       setLoading(false);
     }

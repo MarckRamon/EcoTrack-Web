@@ -26,19 +26,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response) {
-      // Handle 401 Unauthorized errors
-      if (error.response.status === 401) {
-        // Only force logout if the request is not for the profile page
-        if (!error.config.url.includes('/users/profile')) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+    // Only handle 401/403 for non-login endpoints
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      const isLoginEndpoint = error.config.url.includes('/users/login');
+      if (!isLoginEndpoint) {
+        // Clear token only for non-login endpoints
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Redirect to login only if not already on login page
+        if (!window.location.pathname.includes('/login')) {
           window.location.href = '/admin/login';
         }
-      }
-      // Return server error message if available
-      if (error.response.data && error.response.data.message) {
-        return Promise.reject(new Error(error.response.data.message));
       }
     }
     return Promise.reject(error);
