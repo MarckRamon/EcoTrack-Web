@@ -7,6 +7,7 @@ import SetNewPassword from './SetNewPassword';
 import EditProfile from './EditProfile';
 import Users from './Users';
 import JobOrderRequest from './JobOrderRequest';
+import CollectionPoints from './CollectionPoints';
 import './App.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/admin/profile" element={<EditProfile />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/job-orders" element={<JobOrderRequest />} />
+        <Route path="/admin/collection-points" element={<CollectionPoints />} />
       </Routes>
     </Router>
   );

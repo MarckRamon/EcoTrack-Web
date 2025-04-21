@@ -1,3 +1,5 @@
+@import 'leaflet/dist/leaflet.css';
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -24,10 +26,29 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
   min-height: 100vh;
+  background-color: #f3f4f6;
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Override leaflet control z-index to appear above the map */
+.leaflet-control {
+  z-index: 2 !important;
+}
+
+/* Override popup z-index */
+.leaflet-popup {
+  z-index: 3 !important;
 }
 
 h1 {
