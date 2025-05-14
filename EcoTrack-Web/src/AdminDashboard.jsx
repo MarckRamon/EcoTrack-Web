@@ -36,17 +36,25 @@ const locationData = [
 const AdminDashboard = () => {
   const [totalActiveUsers, setTotalActiveUsers] = useState(0);
   const [totalPickupTrash, setTotalPickupTrash] = useState(0);
+  const [totalCollectionPoints, setTotalCollectionPoints] = useState(0);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         // Fetch total active users
         const usersResponse = await axios.get('http://localhost:8080/api/users/total-active');
-        setTotalActiveUsers(usersResponse.data);
+        console.log('Active Users Response:', usersResponse.data);
+        setTotalActiveUsers(usersResponse.data.count !== undefined ? usersResponse.data.count : usersResponse.data);
 
         // Fetch total pickup trash ordered
         const statsResponse = await axios.get('http://localhost:8080/api/payments/dashboard/stats');
-        setTotalPickupTrash(statsResponse.data);
+        console.log('Pickup Trash Stats Response:', statsResponse.data);
+        setTotalPickupTrash(statsResponse.data.count !== undefined ? statsResponse.data.count : statsResponse.data);
+
+        // Fetch total collection points
+        const collectionPointsResponse = await axios.get('http://localhost:8080/api/pickup-locations/count');
+        console.log('Collection Points Response:', collectionPointsResponse.data);
+        setTotalCollectionPoints(collectionPointsResponse.data.count !== undefined ? collectionPointsResponse.data.count : collectionPointsResponse.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -105,7 +113,7 @@ const AdminDashboard = () => {
               Total Collection Points
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              10,659
+              {totalCollectionPoints.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
