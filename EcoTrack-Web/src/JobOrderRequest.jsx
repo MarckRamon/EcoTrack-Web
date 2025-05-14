@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -17,91 +17,43 @@ import {
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import AdminLayout from './components/AdminLayout';
-
-// Static data matching the image
-const staticOrders = [
-  {
-    id: 1,
-    name: 'Gorge Kell',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Lagtang',
-    paymentMethod: 'GCash'
-  },
-  {
-    id: 2,
-    name: 'Steven Reeves',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Tabunok',
-    paymentMethod: 'Cash on Hand'
-  },
-  {
-    id: 3,
-    name: 'Ronald Richards',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Bulacao',
-    paymentMethod: 'Cash on Hand'
-  },
-  {
-    id: 4,
-    name: 'Marvin McKinney',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Pardo',
-    paymentMethod: 'Cash on Hand'
-  },
-  {
-    id: 5,
-    name: 'Jerome Bell',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Lagtang',
-    paymentMethod: 'GCash'
-  },
-  {
-    id: 6,
-    name: 'Kathryn Murphy',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Pardo',
-    paymentMethod: 'Cash on Hand'
-  },
-  {
-    id: 7,
-    name: 'Jacob Jones',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Lawaan-II',
-    paymentMethod: 'GCash'
-  },
-  {
-    id: 8,
-    name: 'Kristin Watson',
-    receiptNo: '0237-7746-8981-9028-562',
-    phoneNo: '09224780579',
-    location: 'Lawaan-I',
-    paymentMethod: 'GCash'
-  }
-];
+import axios from 'axios';
 
 const JobOrderRequest = () => {
+  const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Change 'token' if your key is different
+        const response = await axios.get('http://localhost:8080/api/payments', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setOrders(response.data);
+      } catch (error) {
+        console.error('Error fetching job orders:', error);
+      }
+    };
+    fetchOrders();
+  }, []);
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  // Map backend fields to table fields
+  const mappedOrders = orders.map((order, idx) => ({
+    id: order.id || idx,
+    name: order.paymentMethod || '', // No name in backend, using paymentMethod as placeholder
+    receiptNo: order.paymentReference || '',
+    phoneNo: '', // Not available in backend response
+    location: '', // Not available in backend response
+    paymentMethod: order.paymentMethod || '',
+  }));
 
-  const filteredOrders = staticOrders.filter(order => {
+  const filteredOrders = mappedOrders.filter(order => {
     const searchLower = searchQuery.toLowerCase();
     return (
       order.name.toLowerCase().includes(searchLower) ||
@@ -111,6 +63,15 @@ const JobOrderRequest = () => {
       order.paymentMethod.toLowerCase().includes(searchLower)
     );
   });
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <AdminLayout>

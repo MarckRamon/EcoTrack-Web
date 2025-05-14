@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts';
 import AdminLayout from './components/AdminLayout';
+import axios from 'axios';
 
 // Mock data for the chart
 const monthlyData = [
@@ -33,6 +34,27 @@ const locationData = [
 ];
 
 const AdminDashboard = () => {
+  const [totalActiveUsers, setTotalActiveUsers] = useState(0);
+  const [totalPickupTrash, setTotalPickupTrash] = useState(0);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch total active users
+        const usersResponse = await axios.get('http://localhost:8080/api/users/total-active');
+        setTotalActiveUsers(usersResponse.data);
+
+        // Fetch total pickup trash ordered
+        const statsResponse = await axios.get('http://localhost:8080/api/payments/dashboard/stats');
+        setTotalPickupTrash(statsResponse.data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   return (
     <AdminLayout>
       {/* Reports Header */}
@@ -63,7 +85,7 @@ const AdminDashboard = () => {
               Active Users
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              121
+              {totalActiveUsers}
             </Typography>
           </Paper>
         </Grid>
@@ -73,7 +95,7 @@ const AdminDashboard = () => {
               Total Pickup Trash Ordered
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              3,298
+              {totalPickupTrash.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
