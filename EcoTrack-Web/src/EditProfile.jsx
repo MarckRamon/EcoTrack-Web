@@ -31,7 +31,7 @@ const EditProfile = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          navigate('/admin/login');
+          navigate('/');
           return;
         }
 
@@ -66,7 +66,7 @@ const EditProfile = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/admin/login');
+    navigate('/');
   };
 
   const handleSave = async () => {
@@ -74,7 +74,7 @@ const EditProfile = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        navigate('/admin/login');
+        navigate('/');
         return;
       }
 

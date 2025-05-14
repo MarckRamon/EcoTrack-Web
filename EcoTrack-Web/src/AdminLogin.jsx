@@ -87,16 +87,21 @@ const AdminLogin = () => {
             role: normalizedRole
           }));
           
-          navigate('/admin/dashboard');
+          // Also store token for Firestore access
+          localStorage.setItem('firestoreAuthToken', token);
+          
+          navigate('/dashboard');
         } else {
           setError('Access denied. Only administrators are allowed to login.');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          localStorage.removeItem('firestoreAuthToken');
         }
       } else {
         setError('Access denied. No role found in token.');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('firestoreAuthToken');
       }
     } catch (error) {
       if (error.response?.status === 403) {
@@ -108,6 +113,7 @@ const AdminLogin = () => {
       }
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('firestoreAuthToken');
     } finally {
       setLoading(false);
     }
@@ -262,7 +268,7 @@ const AdminLogin = () => {
 
             <Link
               component={RouterLink}
-              to="/admin/forgot-password"
+              to="/forgot-password"
               sx={{
                 display: 'block',
                 textAlign: 'left',

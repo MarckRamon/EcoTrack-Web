@@ -34,7 +34,7 @@ const SetNewPassword = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Add your password reset logic here
-    navigate('/admin/login');
+    navigate('/');
   };
 
   return (

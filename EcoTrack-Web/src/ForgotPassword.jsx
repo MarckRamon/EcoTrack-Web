@@ -22,7 +22,7 @@ const ForgotPassword = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // Add your password reset logic here
-    navigate('/admin/login');
+    navigate('/');
   };
 
   return (
@@ -92,7 +92,7 @@ const ForgotPassword = () => {
           <Box sx={{ mb: 3, textAlign: 'left' }}>
             <Link
               component={RouterLink}
-              to="/admin/login"
+              to="/"
               sx={{
                 display: 'flex',
                 alignItems: 'center',

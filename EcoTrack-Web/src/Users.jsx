@@ -93,7 +93,7 @@ const Users = () => {
         const token = localStorage.getItem('token');
         if (!token) {
           alert('Please log in again.');
-          navigate('/admin/login');
+          navigate('/');
           return;
         }
 
