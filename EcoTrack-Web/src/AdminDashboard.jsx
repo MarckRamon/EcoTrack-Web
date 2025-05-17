@@ -10,6 +10,7 @@ import {
 import { BarChart } from '@mui/x-charts';
 import AdminLayout from './components/AdminLayout';
 import api from './api/axios';
+import { useNavigate } from 'react-router-dom';
 
 // Mock data for the chart
 const monthlyData = [
@@ -37,6 +38,10 @@ const AdminDashboard = () => {
   const [totalActiveUsers, setTotalActiveUsers] = useState(0);
   const [totalPickupTrash, setTotalPickupTrash] = useState(0);
   const [totalCollectionPoints, setTotalCollectionPoints] = useState(0);
+  const [barangays, setBarangays] = useState([]);
+  const [selectedBarangay, setSelectedBarangay] = useState(null);
+  const [barangaySchedules, setBarangaySchedules] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -52,12 +57,12 @@ const AdminDashboard = () => {
         setTotalPickupTrash(statsResponse.data.totalPickupTrashOrdered || 0);
 
         try {
-          // Fetch total collection points - wrapped in try/catch to handle 404
-          const collectionPointsResponse = await api.get('/pickup-locations/count');
-          console.log('Collection Points Response:', collectionPointsResponse.data);
-          setTotalCollectionPoints(collectionPointsResponse.data.count || 0);
+          // Fetch total collection points by fetching all pickup locations and counting them
+          const collectionPointsResponse = await api.get('/pickup-locations');
+          const locations = collectionPointsResponse.data.locations || [];
+          setTotalCollectionPoints(locations.length);
         } catch (error) {
-          console.warn('Could not fetch collection points count:', error.message);
+          console.warn('Could not fetch collection points:', error.message);
           // Keep default value (0) if endpoint is not available
         }
       } catch (error) {
@@ -67,6 +72,49 @@ const AdminDashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    // Fetch barangays for calendar
+    const fetchBarangays = async () => {
+      try {
+        const res = await api.get('/barangays');
+        const brgys = Array.isArray(res.data) ? res.data : [res.data];
+        setBarangays(brgys);
+        if (brgys.length > 0) setSelectedBarangay(brgys[0]);
+      } catch (e) {
+        setBarangays([]);
+      }
+    };
+    fetchBarangays();
+  }, []);
+
+  useEffect(() => {
+    // Fetch schedules for selected barangay
+    const fetchSchedules = async () => {
+      if (!selectedBarangay) return;
+      try {
+        const res = await api.get(`/collection-schedules/barangay/${selectedBarangay.barangayId}`);
+        setBarangaySchedules(Array.isArray(res.data) ? res.data : [res.data]);
+      } catch (e) {
+        setBarangaySchedules([]);
+      }
+    };
+    fetchSchedules();
+  }, [selectedBarangay]);
+
+  // Helper: get all booked days in current month
+  const getBookedDays = () => {
+    const booked = new Set();
+    barangaySchedules.forEach(sch => {
+      if (sch.collectionDateTime) {
+        const date = new Date(sch.collectionDateTime);
+        booked.add(date.getDate());
+      }
+      // Optionally handle recurring schedules here
+    });
+    return booked;
+  };
+  const bookedDays = getBookedDays();
 
   return (
     <AdminLayout>
@@ -280,6 +328,23 @@ const AdminDashboard = () => {
 
           {/* Calendar */}
           <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', bgcolor: 'white' }}>
+            {/* Barangay Selector */}
+            <Box sx={{ mb: 2 }}>
+              <Select
+                value={selectedBarangay?.barangayId || ''}
+                onChange={e => {
+                  const brgy = barangays.find(b => b.barangayId === e.target.value);
+                  setSelectedBarangay(brgy);
+                }}
+                fullWidth
+                size="small"
+                sx={{ bgcolor: 'white' }}
+              >
+                {barangays.map(b => (
+                  <MenuItem key={b.barangayId} value={b.barangayId}>{b.name}</MenuItem>
+                ))}
+              </Select>
+            </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>
                 March
@@ -300,25 +365,25 @@ const AdminDashboard = () => {
                 </Typography>
               ))}
               {Array.from({ length: 35 }, (_, i) => {
-                const dayNum = i - 1; // Adjust for February ending
+                const dayNum = i - 1;
                 const isValid = dayNum >= 0 && dayNum < 31;
-                const isToday = dayNum + 1 === 15;
-                const hasPickup = [2, 5, 8, 13, 16, 20, 23, 29, 31].includes(dayNum + 1);
-                
+                const isToday = dayNum + 1 === new Date().getDate();
+                const isBooked = bookedDays.has(dayNum + 1);
                 return (
                   <Box 
                     key={i}
                     sx={{ 
                       p: 1.5,
                       position: 'relative',
-                      cursor: 'pointer',
+                      cursor: isBooked ? 'pointer' : 'default',
                       borderRadius: 1,
                       bgcolor: isToday ? '#EEF2FF' : 'transparent',
                       border: isToday ? '1px solid #4CAF50' : 'none',
                       '&:hover': {
-                        bgcolor: isToday ? '#EEF2FF' : '#f1f5f9',
+                        bgcolor: isToday ? '#EEF2FF' : isBooked ? '#E8F5E9' : '#f1f5f9',
                       },
                     }}
+                    onClick={() => isBooked && navigate('/collection-schedule')}
                   >
                     {isValid && (
                       <>
@@ -331,11 +396,11 @@ const AdminDashboard = () => {
                         >
                           {dayNum + 1}
                         </Typography>
-                        {hasPickup && (
+                        {isBooked && (
                           <Typography 
                             sx={{ 
                               fontSize: '0.65rem',
-                              color: '#4CAF50',
+                              color: '#388e3c',
                               mt: 0.5,
                               bgcolor: '#E8F5E9',
                               borderRadius: '4px',
@@ -343,7 +408,7 @@ const AdminDashboard = () => {
                               px: 0.5,
                             }}
                           >
-                            Pickup Garbage
+                            Booked
                           </Typography>
                         )}
                       </>
