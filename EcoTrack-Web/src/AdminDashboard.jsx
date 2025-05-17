@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts';
 import AdminLayout from './components/AdminLayout';
-import axios from 'axios';
+import api from './api/axios';
 
 // Mock data for the chart
 const monthlyData = [
@@ -42,19 +42,24 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch total active users
-        const usersResponse = await axios.get('http://localhost:8080/api/users/total-active');
+        const usersResponse = await api.get('/users/total-active');
         console.log('Active Users Response:', usersResponse.data);
-        setTotalActiveUsers(usersResponse.data.count !== undefined ? usersResponse.data.count : usersResponse.data);
+        setTotalActiveUsers(usersResponse.data.totalActiveUsers || 0);
 
         // Fetch total pickup trash ordered
-        const statsResponse = await axios.get('http://localhost:8080/api/payments/dashboard/stats');
+        const statsResponse = await api.get('/payments/dashboard/stats');
         console.log('Pickup Trash Stats Response:', statsResponse.data);
-        setTotalPickupTrash(statsResponse.data.count !== undefined ? statsResponse.data.count : statsResponse.data);
+        setTotalPickupTrash(statsResponse.data.totalPickupTrashOrdered || 0);
 
-        // Fetch total collection points
-        const collectionPointsResponse = await axios.get('http://localhost:8080/api/pickup-locations/count');
-        console.log('Collection Points Response:', collectionPointsResponse.data);
-        setTotalCollectionPoints(collectionPointsResponse.data.count !== undefined ? collectionPointsResponse.data.count : collectionPointsResponse.data);
+        try {
+          // Fetch total collection points - wrapped in try/catch to handle 404
+          const collectionPointsResponse = await api.get('/pickup-locations/count');
+          console.log('Collection Points Response:', collectionPointsResponse.data);
+          setTotalCollectionPoints(collectionPointsResponse.data.count || 0);
+        } catch (error) {
+          console.warn('Could not fetch collection points count:', error.message);
+          // Keep default value (0) if endpoint is not available
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
