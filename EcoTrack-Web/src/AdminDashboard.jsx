@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { BarChart } from '@mui/x-charts';
 import AdminLayout from './components/AdminLayout';
+import api from './api/axios';
 
 // Mock data for the chart
 const monthlyData = [
@@ -33,6 +34,40 @@ const locationData = [
 ];
 
 const AdminDashboard = () => {
+  const [totalActiveUsers, setTotalActiveUsers] = useState(0);
+  const [totalPickupTrash, setTotalPickupTrash] = useState(0);
+  const [totalCollectionPoints, setTotalCollectionPoints] = useState(0);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch total active users
+        const usersResponse = await api.get('/users/total-active');
+        console.log('Active Users Response:', usersResponse.data);
+        setTotalActiveUsers(usersResponse.data.totalActiveUsers || 0);
+
+        // Fetch total pickup trash ordered
+        const statsResponse = await api.get('/payments/dashboard/stats');
+        console.log('Pickup Trash Stats Response:', statsResponse.data);
+        setTotalPickupTrash(statsResponse.data.totalPickupTrashOrdered || 0);
+
+        try {
+          // Fetch total collection points - wrapped in try/catch to handle 404
+          const collectionPointsResponse = await api.get('/pickup-locations/count');
+          console.log('Collection Points Response:', collectionPointsResponse.data);
+          setTotalCollectionPoints(collectionPointsResponse.data.count || 0);
+        } catch (error) {
+          console.warn('Could not fetch collection points count:', error.message);
+          // Keep default value (0) if endpoint is not available
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   return (
     <AdminLayout>
       {/* Reports Header */}
@@ -63,7 +98,7 @@ const AdminDashboard = () => {
               Active Users
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              121
+              {totalActiveUsers}
             </Typography>
           </Paper>
         </Grid>
@@ -73,7 +108,7 @@ const AdminDashboard = () => {
               Total Pickup Trash Ordered
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              3,298
+              {totalPickupTrash.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -83,7 +118,7 @@ const AdminDashboard = () => {
               Total Collection Points
             </Typography>
             <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              10,659
+              {totalCollectionPoints.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
