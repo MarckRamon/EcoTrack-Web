@@ -46,10 +46,10 @@ const JobOrderRequest = () => {
   // Map backend fields to table fields
   const mappedOrders = orders.map((order, idx) => ({
     id: order.id || idx,
-    name: order.paymentMethod || '', // No name in backend, using paymentMethod as placeholder
+    name: order.customerName || '',
     receiptNo: order.paymentReference || '',
-    phoneNo: '', // Not available in backend response
-    location: '', // Not available in backend response
+    phoneNo: order.phoneNumber || '',
+    location: order.address || '',
     paymentMethod: order.paymentMethod || '',
   }));
 
