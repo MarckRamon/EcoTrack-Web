@@ -10,6 +10,7 @@ import Users from './Users';
 import JobOrderRequest from './JobOrderRequest';
 import CollectionPoints from './CollectionPoints';
 import CollectionSchedule from './CollectionSchedule';
+import Trucks from './Trucks';
 import AuthSynchronizer from './components/AuthSynchronizer';
 import './App.css';
 
@@ -85,6 +86,7 @@ function App() {
           <Route path="/job-orders" element={<JobOrderRequest />} />
           <Route path="/collection-points" element={<CollectionPoints />} />
           <Route path="/schedule" element={<CollectionSchedule />} />
+          <Route path="/trucks" element={<Trucks />} />
         </Route>
         
         {/* Redirects for old /admin paths */}
@@ -97,6 +99,7 @@ function App() {
         <Route path="/admin/job-orders" element={<Navigate to="/job-orders" replace />} />
         <Route path="/admin/collection-points" element={<Navigate to="/collection-points" replace />} />
         <Route path="/admin/schedule" element={<Navigate to="/schedule" replace />} />
+        <Route path="/admin/trucks" element={<Navigate to="/trucks" replace />} />
         
         {/* Catch all route - redirect to login */}
         <Route path="*" element={<Navigate to="/" replace />} />

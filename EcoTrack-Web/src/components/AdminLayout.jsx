@@ -7,6 +7,7 @@ import {
   CalendarToday,
   Person,
   Assignment,
+  LocalShipping,
 } from '@mui/icons-material';
 
 const AdminLayout = ({ children }) => {
@@ -56,7 +57,7 @@ const AdminLayout = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          navigate('/admin/login');
+          navigate('/');
           return;
         }
 
@@ -130,52 +131,62 @@ const AdminLayout = ({ children }) => {
         </Box>
 
         <Box
-          sx={getMenuItemStyles('/admin/dashboard')}
-          onClick={() => navigate('/admin/dashboard')}
+          sx={getMenuItemStyles('/dashboard')}
+          onClick={() => navigate('/dashboard')}
         >
-          <TrendingUp sx={getIconStyles('/admin/dashboard')} />
-          <Typography sx={getTextStyles('/admin/dashboard')}>
+          <TrendingUp sx={getIconStyles('/dashboard')} />
+          <Typography sx={getTextStyles('/dashboard')}>
             Dashboard
           </Typography>
         </Box>
 
         <Box
-          sx={getMenuItemStyles('/admin/collection-points')}
-          onClick={() => navigate('/admin/collection-points')}
+          sx={getMenuItemStyles('/collection-points')}
+          onClick={() => navigate('/collection-points')}
         >
-          <LocationOn sx={getIconStyles('/admin/collection-points')} />
-          <Typography sx={getTextStyles('/admin/collection-points')}>
+          <LocationOn sx={getIconStyles('/collection-points')} />
+          <Typography sx={getTextStyles('/collection-points')}>
             Collection Points
           </Typography>
         </Box>
 
         <Box
-          sx={getMenuItemStyles('/admin/schedule')}
-          onClick={() => navigate('/admin/schedule')}
+          sx={getMenuItemStyles('/schedule')}
+          onClick={() => navigate('/schedule')}
         >
-          <CalendarToday sx={getIconStyles('/admin/schedule')} />
-          <Typography sx={getTextStyles('/admin/schedule')}>
+          <CalendarToday sx={getIconStyles('/schedule')} />
+          <Typography sx={getTextStyles('/schedule')}>
             Collection Schedule
           </Typography>
         </Box>
 
         <Box
-          sx={getMenuItemStyles('/admin/users')}
-          onClick={() => navigate('/admin/users')}
+          sx={getMenuItemStyles('/users')}
+          onClick={() => navigate('/users')}
         >
-          <Person sx={getIconStyles('/admin/users')} />
-          <Typography sx={getTextStyles('/admin/users')}>
+          <Person sx={getIconStyles('/users')} />
+          <Typography sx={getTextStyles('/users')}>
             Users
           </Typography>
         </Box>
 
         <Box
-          sx={getMenuItemStyles('/admin/job-orders')}
-          onClick={() => navigate('/admin/job-orders')}
+          sx={getMenuItemStyles('/job-orders')}
+          onClick={() => navigate('/job-orders')}
         >
-          <Assignment sx={getIconStyles('/admin/job-orders')} />
-          <Typography sx={getTextStyles('/admin/job-orders')}>
+          <Assignment sx={getIconStyles('/job-orders')} />
+          <Typography sx={getTextStyles('/job-orders')}>
             Job Order Request
+          </Typography>
+        </Box>
+
+        <Box
+          sx={getMenuItemStyles('/trucks')}
+          onClick={() => navigate('/trucks')}
+        >
+          <LocalShipping sx={getIconStyles('/trucks')} />
+          <Typography sx={getTextStyles('/trucks')}>
+            Trucks
           </Typography>
         </Box>
 
@@ -191,14 +202,14 @@ const AdminLayout = ({ children }) => {
                 bgcolor: '#f3f4f6',
                 borderRadius: 1,
               },
-              ...(isActive('/admin/profile') && {
+              ...(isActive('/profile') && {
                 bgcolor: '#e6f4ea',
                 '&:hover': {
                   bgcolor: '#e6f4ea',
                 },
               }),
             }}
-            onClick={() => navigate('/admin/profile')}
+            onClick={() => navigate('/profile')}
           >
             <Avatar 
               src="/migz.jpg"
@@ -211,9 +222,9 @@ const AdminLayout = ({ children }) => {
             <Box>
               <Typography 
                 sx={{ 
-                  color: isActive('/admin/profile') ? '#4CAF50' : '#333',
+                  color: isActive('/profile') ? '#4CAF50' : '#333',
                   fontSize: '14px',
-                  fontWeight: isActive('/admin/profile') ? 600 : 500,
+                  fontWeight: isActive('/profile') ? 600 : 500,
                   lineHeight: 1.2
                 }}
               >

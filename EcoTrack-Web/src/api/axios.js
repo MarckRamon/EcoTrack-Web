@@ -205,4 +205,101 @@ api.tryAlternativeMethods = async (url, data = null, preferredMethods = ['get', 
   }
 };
 
+/**
+ * Assign a driver to a payment
+ * @param {string} paymentId
+ * @param {string} driverId
+ * @returns {Promise<Object>} Updated payment
+ */
+api.assignDriverToPayment = async (paymentId, driverId) => {
+  const response = await api.post('/payments/assign-driver', {
+    paymentId,
+    driverId,
+  });
+  return response.data;
+};
+
+/**
+ * Fetch all users
+ * @returns {Promise<Array>} Array of users
+ */
+api.fetchAllUsers = async () => {
+  const response = await api.get('/users/all');
+  // Some APIs return { users: [...] }, some just [...]
+  return response.data?.users || response.data || [];
+};
+
+/**
+ * Fetch all trucks
+ * @returns {Promise<Array>} Array of trucks
+ */
+api.fetchAllTrucks = async () => {
+  const response = await api.get('/trucks');
+  return response.data;
+};
+
+/**
+ * Create a new truck
+ * @param {Object} truckData - Truck data
+ * @returns {Promise<Object>} Created truck
+ */
+api.createTruck = async (truckData) => {
+  const response = await api.post('/trucks', truckData);
+  return response.data;
+};
+
+/**
+ * Update a truck
+ * @param {string} truckId - ID of the truck to update
+ * @param {Object} truckData - Updated truck data
+ * @returns {Promise<Object>} Updated truck
+ */
+api.updateTruck = async (truckId, truckData) => {
+  const response = await api.put(`/trucks/${truckId}`, truckData);
+  return response.data;
+};
+
+/**
+ * Delete a truck
+ * @param {string} truckId - ID of the truck to delete
+ * @returns {Promise<Object>} Deleted truck
+ */
+api.deleteTruck = async (truckId) => {
+  const response = await api.delete(`/trucks/${truckId}`);
+  return response.data;
+};
+
+/**
+ * Assign a truck to a payment
+ * @param {string} paymentId - ID of the payment
+ * @param {string} truckId - ID of the truck
+ * @returns {Promise<Object>} Updated payment
+ */
+api.assignTruckToPayment = async (paymentId, truckId) => {
+  const response = await api.post('/trucks/assign', {
+    paymentId,
+    truckId,
+  });
+  return response.data;
+};
+
+/**
+ * Release a truck from a payment
+ * @param {string} paymentId - ID of the payment
+ * @returns {Promise<Object>} Updated payment
+ */
+api.releaseTruckFromPayment = async (paymentId) => {
+  const response = await api.post(`/trucks/release/${paymentId}`);
+  return response.data;
+};
+
+/**
+ * Fetch all barangays
+ * @returns {Promise<Array>} Array of barangays
+ */
+api.fetchAllBarangays = async () => {
+  const response = await api.get('/barangays');
+  return response.data;
+};
+
 export default api; 

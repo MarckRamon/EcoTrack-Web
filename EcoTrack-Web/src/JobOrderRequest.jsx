@@ -14,10 +14,20 @@ import {
   Paper,
   Select,
   MenuItem,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import AdminLayout from './components/AdminLayout';
 import axios from 'axios';
+import api from './api/axios';
 
 const JobOrderRequest = () => {
   const [orders, setOrders] = useState([]);
@@ -25,22 +35,64 @@ const JobOrderRequest = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(8);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [drivers, setDrivers] = useState([]);
+  const [selectedPaymentId, setSelectedPaymentId] = useState(null);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [driverMap, setDriverMap] = useState({}); // { driverId: {firstName, lastName, ...} }
+  const [trucks, setTrucks] = useState([]);
+  const [truckMap, setTruckMap] = useState({});
+  const [assignTruckModalOpen, setAssignTruckModalOpen] = useState(false);
+  const [selectedPaymentForTruck, setSelectedPaymentForTruck] = useState(null);
+  const [assignTruckLoading, setAssignTruckLoading] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const token = localStorage.getItem('token'); // Change 'token' if your key is different
-        const response = await axios.get('http://localhost:8080/api/payments', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.get('/payments');
         setOrders(response.data);
       } catch (error) {
         console.error('Error fetching job orders:', error);
       }
     };
     fetchOrders();
+  }, []);
+
+  // Fetch drivers on mount
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const allUsers = await api.fetchAllUsers();
+        const driverList = allUsers.filter(u => u.role && u.role.toLowerCase() === 'driver');
+        setDrivers(driverList);
+        // Build a map for quick lookup
+        const map = {};
+        driverList.forEach(d => { map[d.userId] = d; });
+        setDriverMap(map);
+      } catch (e) {
+        setDrivers([]);
+      }
+    };
+    fetchDrivers();
+  }, []);
+
+  // Add new useEffect for fetching trucks
+  useEffect(() => {
+    const fetchTrucks = async () => {
+      try {
+        const data = await api.fetchAllTrucks();
+        setTrucks(data);
+        // Build a map for quick lookup
+        const map = {};
+        data.forEach(t => { map[t.truckId] = t; });
+        setTruckMap(map);
+      } catch (error) {
+        console.error('Error fetching trucks:', error);
+        setTrucks([]);
+        setTruckMap({});
+      }
+    };
+    fetchTrucks();
   }, []);
 
   // Map backend fields to table fields
@@ -50,7 +102,10 @@ const JobOrderRequest = () => {
     receiptNo: order.paymentReference || '',
     phoneNo: order.phoneNumber || '',
     location: order.address || '',
+    totalAmount: order.totalAmount || '',
     paymentMethod: order.paymentMethod || '',
+    driverId: order.driverId || '',
+    truckId: order.truckId || '',
   }));
 
   const filteredOrders = mappedOrders.filter(order => {
@@ -71,6 +126,54 @@ const JobOrderRequest = () => {
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+  };
+
+  const handleOpenAssignModal = (paymentId) => {
+    setSelectedPaymentId(paymentId);
+    setAssignModalOpen(true);
+  };
+  const handleCloseAssignModal = () => {
+    setAssignModalOpen(false);
+    setSelectedPaymentId(null);
+  };
+  const handleAssignDriver = async (driverId) => {
+    setAssignLoading(true);
+    try {
+      await api.assignDriverToPayment(selectedPaymentId, driverId);
+      // Refresh orders after assignment
+      const response = await api.get('/payments');
+      setOrders(response.data);
+      handleCloseAssignModal();
+    } catch (e) {
+      // Optionally show error
+      setAssignLoading(false);
+    }
+    setAssignLoading(false);
+  };
+
+  // Add new handlers for truck assignment
+  const handleOpenAssignTruckModal = (paymentId) => {
+    setSelectedPaymentForTruck(paymentId);
+    setAssignTruckModalOpen(true);
+  };
+
+  const handleCloseAssignTruckModal = () => {
+    setAssignTruckModalOpen(false);
+    setSelectedPaymentForTruck(null);
+  };
+
+  const handleAssignTruck = async (truckId) => {
+    setAssignTruckLoading(true);
+    try {
+      await api.assignTruckToPayment(selectedPaymentForTruck, truckId);
+      // Refresh orders after assignment
+      const response = await api.get('/payments');
+      setOrders(response.data);
+      handleCloseAssignTruckModal();
+    } catch (error) {
+      console.error('Error assigning truck:', error);
+    }
+    setAssignTruckLoading(false);
   };
 
   return (
@@ -145,7 +248,10 @@ const JobOrderRequest = () => {
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Receipt No</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Phone No</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Location</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Amount</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Payment Method</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Assigned Driver</TableCell>
+                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Assigned Truck</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -157,7 +263,30 @@ const JobOrderRequest = () => {
                     <TableCell>{order.receiptNo}</TableCell>
                     <TableCell>{order.phoneNo}</TableCell>
                     <TableCell>{order.location}</TableCell>
+                    <TableCell>{order.totalAmount !== '' ? `₱${Number(order.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}</TableCell>
                     <TableCell>{order.paymentMethod}</TableCell>
+                    <TableCell>
+                      {order.driverId ? (
+                        driverMap[order.driverId]
+                          ? `${driverMap[order.driverId].firstName} ${driverMap[order.driverId].lastName}`
+                          : order.driverId
+                      ) : (
+                        <Button variant="contained" size="small" onClick={() => handleOpenAssignModal(order.id)}>
+                          Assign
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {order.truckId ? (
+                        truckMap[order.truckId]
+                          ? `${truckMap[order.truckId].plateNumber} (${truckMap[order.truckId].make} ${truckMap[order.truckId].model})`
+                          : order.truckId
+                      ) : (
+                        <Button variant="contained" size="small" onClick={() => handleOpenAssignTruckModal(order.id)}>
+                          Assign
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
             </TableBody>
@@ -173,6 +302,65 @@ const JobOrderRequest = () => {
           />
         </TableContainer>
       </Box>
+
+      {/* Assign Driver Modal */}
+      <Dialog open={assignModalOpen} onClose={handleCloseAssignModal}>
+        <DialogTitle>Assign Driver</DialogTitle>
+        <DialogContent>
+          {assignLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List>
+              {drivers.length === 0 && <ListItem>No drivers found.</ListItem>}
+              {drivers.map(driver => (
+                <ListItem button key={driver.userId} onClick={() => handleAssignDriver(driver.userId)}>
+                  <ListItemText primary={`${driver.firstName} ${driver.lastName}`} secondary={driver.email} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAssignModal}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add new Assign Truck Modal */}
+      <Dialog open={assignTruckModalOpen} onClose={handleCloseAssignTruckModal}>
+        <DialogTitle>Assign Truck</DialogTitle>
+        <DialogContent>
+          {assignTruckLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <List>
+              {trucks.filter(truck => truck.status === 'AVAILABLE').length === 0 && (
+                <ListItem>No available trucks found.</ListItem>
+              )}
+              {trucks
+                .filter(truck => truck.status === 'AVAILABLE')
+                .map(truck => (
+                  <ListItem 
+                    button 
+                    key={truck.truckId} 
+                    onClick={() => handleAssignTruck(truck.truckId)}
+                  >
+                    <ListItemText 
+                      primary={`${truck.plateNumber} (${truck.make} ${truck.model})`}
+                      secondary={`Size: ${truck.size} | Waste Type: ${truck.wasteType}`}
+                    />
+                  </ListItem>
+                ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAssignTruckModal}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
     </AdminLayout>
   );
 };

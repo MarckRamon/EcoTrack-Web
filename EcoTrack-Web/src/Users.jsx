@@ -23,6 +23,7 @@ import AdminLayout from './components/AdminLayout';
 import EditUserDialog from './components/EditUserDialog';
 import api from './api/axios';
 import { useNavigate } from 'react-router-dom';
+import CreateUserDialog from './components/CreateUserDialog';
 
 const Users = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +36,7 @@ const Users = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -43,8 +45,13 @@ const Users = () => {
       setError('');
 
       const response = await api.get('/users/all');
-      if (response.data?.users) {
+      // Accept both { users: [...] } and [...] as valid responses
+      if (Array.isArray(response.data)) {
+        setUsers(response.data);
+      } else if (response.data?.users) {
         setUsers(response.data.users);
+      } else {
+        setUsers([]); // fallback
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -200,6 +207,14 @@ const Users = () => {
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setCreateDialogOpen(true)}
+              sx={{ fontWeight: 600 }}
+            >
+              Create New User
+            </Button>
             <TextField
               placeholder="Search"
               size="small"
@@ -324,6 +339,12 @@ const Users = () => {
         onClose={handleCloseDialog}
         user={selectedUser}
         onSave={handleSaveUser}
+      />
+
+      <CreateUserDialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        onUserCreated={fetchUsers}
       />
     </AdminLayout>
   );

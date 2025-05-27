@@ -74,17 +74,17 @@ const AdminLogin = () => {
 
       // Extract role from decoded token
       const userRole = decodedToken.role;
+      const normalizedRole = userRole ? userRole.toLowerCase().trim() : undefined;
+      console.log('Decoded token:', decodedToken);
+      console.log('Extracted userRole:', userRole);
+      console.log('Normalized role:', normalizedRole);
       
       if (userRole) {
-        const normalizedRole = userRole.toLowerCase().trim();
-        
-        if (normalizedRole === 'admin' || 
-            normalizedRole === 'administrator' || 
-            normalizedRole === 'superadmin') {
+        if (normalizedRole && normalizedRole.includes('admin')) {
           // Store user info
           localStorage.setItem('user', JSON.stringify({
             email: credentials.emailOrPhone.trim(),
-            role: normalizedRole
+            role: userRole // Store the original role string
           }));
           
           // Also store token for Firestore access

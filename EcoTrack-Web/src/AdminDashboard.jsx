@@ -28,12 +28,6 @@ const monthlyData = [
   { month: 'DEC', value: 350 },
 ];
 
-const locationData = [
-  { name: 'Barangay Lagtang', value: 6239 },
-  { name: 'Tabunok', value: 4975 },
-  { name: 'Lawaan-III', value: 2395 },
-];
-
 const AdminDashboard = () => {
   const [totalActiveUsers, setTotalActiveUsers] = useState(0);
   const [totalPickupTrash, setTotalPickupTrash] = useState(0);
@@ -41,6 +35,7 @@ const AdminDashboard = () => {
   const [barangays, setBarangays] = useState([]);
   const [selectedBarangay, setSelectedBarangay] = useState(null);
   const [barangaySchedules, setBarangaySchedules] = useState([]);
+  const [topBarangays, setTopBarangays] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -101,6 +96,18 @@ const AdminDashboard = () => {
     };
     fetchSchedules();
   }, [selectedBarangay]);
+
+  useEffect(() => {
+    const fetchTopBarangays = async () => {
+      try {
+        const res = await api.get('/payments/top-barangays');
+        setTopBarangays(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        setTopBarangays([]);
+      }
+    };
+    fetchTopBarangays();
+  }, []);
 
   // Helper: get all booked days in current month
   const getBookedDays = () => {
@@ -189,74 +196,77 @@ const AdminDashboard = () => {
               Top Most Ordered Location Pickup
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {locationData.map((location, index) => (
-                <Box key={index}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Box
-                      component="span"
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: '#f1f5f9',
-                        borderRadius: 1,
-                        mr: 2,
-                        fontSize: '24px'
-                      }}
-                    >
-                      🚛
+              {topBarangays.map((barangay, index) => {
+                const barangayName = barangays.find(b => b.barangayId === barangay.barangayId)?.name || barangay.barangayId;
+                return (
+                  <Box key={barangay.barangayId}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Box
+                        component="span"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: '#f1f5f9',
+                          borderRadius: 1,
+                          mr: 2,
+                          fontSize: '24px'
+                        }}
+                      >
+                        🚛
+                      </Box>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#333', 
+                          fontWeight: 500,
+                          fontSize: '16px',
+                        }}
+                      >
+                        {barangayName}
+                      </Typography>
                     </Box>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        color: '#333', 
-                        fontWeight: 500,
-                        fontSize: '16px',
-                      }}
-                    >
-                      {location.name}
-                    </Typography>
+                    <Box sx={{ position: 'relative', height: 8, width: '100%', mb: 1 }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: '100%',
+                          borderRadius: 4,
+                          bgcolor: '#E8F5E9',
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: `${(barangay.count / (topBarangays[0]?.count || 1)) * 100}%`,
+                          height: '100%',
+                          borderRadius: 4,
+                          background: 'linear-gradient(90deg, #4CAF50 0%, #43A047 100%)',
+                        }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          color: '#333', 
+                          fontWeight: 500,
+                          fontSize: '16px',
+                        }}
+                      >
+                        {barangay.count.toLocaleString()}
+                      </Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ position: 'relative', height: 8, width: '100%', mb: 1 }}>
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '100%',
-                        borderRadius: 4,
-                        bgcolor: '#E8F5E9',
-                      }}
-                    />
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: `${(location.value / 8000) * 100}%`,
-                        height: '100%',
-                        borderRadius: 4,
-                        background: 'linear-gradient(90deg, #4CAF50 0%, #43A047 100%)',
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        color: '#333', 
-                        fontWeight: 500,
-                        fontSize: '16px',
-                      }}
-                    >
-                      {location.value.toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
+                );
+              })}
             </Box>
           </Paper>
         </Grid>
