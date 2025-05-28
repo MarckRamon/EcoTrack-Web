@@ -228,6 +228,77 @@ const Trucks = () => {
           </Table>
         </TableContainer>
       </Box>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedTruck ? 'Edit Truck' : 'Add New Truck'}</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <TextField
+              label="Plate Number"
+              value={formData.plateNumber}
+              onChange={e => setFormData({ ...formData, plateNumber: e.target.value })}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="Make"
+              value={formData.make}
+              onChange={e => setFormData({ ...formData, make: e.target.value })}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <TextField
+              label="Model"
+              value={formData.model}
+              onChange={e => setFormData({ ...formData, model: e.target.value })}
+              fullWidth
+              margin="normal"
+              required
+            />
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Size</InputLabel>
+              <Select
+                value={formData.size}
+                onChange={e => setFormData({ ...formData, size: e.target.value })}
+                label="Size"
+              >
+                <MenuItem value="SMALL">Small</MenuItem>
+                <MenuItem value="MEDIUM">Medium</MenuItem>
+                <MenuItem value="LARGE">Large</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Waste Type</InputLabel>
+              <Select
+                value={formData.wasteType}
+                onChange={e => setFormData({ ...formData, wasteType: e.target.value })}
+                label="Waste Type"
+              >
+                <MenuItem value="GENERAL">General</MenuItem>
+                <MenuItem value="RECYCLABLE">Recyclable</MenuItem>
+                <MenuItem value="HAZARDOUS">Hazardous</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={formData.status}
+                onChange={e => setFormData({ ...formData, status: e.target.value })}
+                label="Status"
+              >
+                <MenuItem value="AVAILABLE">Available</MenuItem>
+                <MenuItem value="CURRENTLY_IN_USE">Currently In Use</MenuItem>
+                <MenuItem value="MAINTENANCE">Maintenance</MenuItem>
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>Cancel</Button>
+            <Button type="submit" variant="contained">{selectedTruck ? 'Save Changes' : 'Add Truck'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </AdminLayout>
   );
 };

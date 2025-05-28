@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -7,9 +7,35 @@ import {
   Button,
   Container,
   Link,
+  CircularProgress,
+  Alert,
+  Paper,
 } from '@mui/material';
 import api from './api/axios';
 import './AdminLogin.css';
+import { styled } from '@mui/system';
+
+// Styles for the container to center content
+const CenteredContainer = styled(Container)({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '100vh',
+});
+
+// Styles for the login form paper
+const LoginFormPaper = styled(Box)({
+  padding: '40px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+  borderRadius: '12px',
+  width: '100%',
+  maxWidth: '400px',
+  bgcolor: 'white', // Add a solid background color to make it opaque
+});
 
 // Function to decode JWT token
 const decodeToken = (token) => {
@@ -38,6 +64,39 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Check for existing token and user data on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (token && user && user.role) {
+      console.log('Existing token and user data found. Role:', user.role);
+      // Redirect based on existing role
+      if (user.role.toLowerCase() === 'admin') {
+        navigate('/dashboard', { replace: true });
+      } else if (user.role.toLowerCase() === 'private_entity') {
+        navigate('/private-dashboard', { replace: true });
+      } else {
+        // If role is something else or not recognized, clear and go to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('firestoreAuthToken'); // assuming you use this too
+        console.log('Existing user data with unrecognized role. Cleared local storage.');
+        // Stay on login page
+      }
+    } else if (token) {
+         // If token exists but user data doesn't, something is wrong, clear storage
+         localStorage.removeItem('token');
+         localStorage.removeItem('user');
+         localStorage.removeItem('firestoreAuthToken');
+         console.log('Existing token found without user data. Cleared local storage.');
+    }
+     else {
+      console.log('No existing token or user data found. Staying on login page.');
+      // Stay on login page
+    }
+  }, [navigate]); // Dependency array includes navigate
+
   const handleChange = (e) => {
     setCredentials({
       ...credentials,
@@ -56,8 +115,10 @@ const AdminLogin = () => {
         password: credentials.password
       });
 
+      console.log('Login API response:', response.data);
+
       const { token } = response.data;
-      
+
       if (!token) {
         throw new Error('No token received from server');
       }
@@ -78,21 +139,60 @@ const AdminLogin = () => {
       console.log('Decoded token:', decodedToken);
       console.log('Extracted userRole:', userRole);
       console.log('Normalized role:', normalizedRole);
-      
+
       if (userRole) {
-        if (normalizedRole && normalizedRole.includes('admin')) {
-          // Store user info
-          localStorage.setItem('user', JSON.stringify({
-            email: credentials.emailOrPhone.trim(),
-            role: userRole // Store the original role string
-          }));
-          
-          // Also store token for Firestore access
+        if (normalizedRole.includes('admin') || normalizedRole === 'private_entity') {
+          // Extract user info from the decoded token
+          const userInfo = {
+            userId: decodedToken.userId,
+            firstName: decodedToken.firstName,
+            lastName: decodedToken.lastName,
+            email: decodedToken.email,
+            role: userRole
+          };
+
+          // If firstName or lastName is missing, fetch the latest profile from backend
+          if (!userInfo.firstName || !userInfo.lastName) {
+            try {
+              const profileResponse = await api.get(`/users/profile/${userInfo.userId}`);
+              const profile = profileResponse.data;
+              userInfo.firstName = profile.firstName || userInfo.firstName;
+              userInfo.lastName = profile.lastName || userInfo.lastName;
+              userInfo.email = profile.email || userInfo.email;
+            } catch (e) {
+              // If fetching profile fails, fallback to token info
+              console.warn('Could not fetch full user profile, using token info.');
+            }
+          }
+
+           // --- Start: Add entityId for private entities ---
+           // Check if the response contains entityId and the user is a private entity
+           if (normalizedRole === 'private_entity') {
+               console.log('Private entity login response data:', response.data); // Log the response data
+               if (response.data.entityId) {
+                   userInfo.entityId = response.data.entityId; // Add entityId to the user object
+               } else {
+                   console.warn('Login response for private entity missing entityId.', response.data);
+                   // Optionally set an error here if entityId is critical for private entities
+                   // setError('Login successful, but entity data is incomplete.');
+               }
+           }
+           // --- End: Add entityId for private entities ---
+
+          localStorage.setItem('user', JSON.stringify(userInfo));
           localStorage.setItem('firestoreAuthToken', token);
-          
-          navigate('/dashboard');
+
+          // Redirect based on role
+          if (normalizedRole === 'private_entity') {
+            // Removed the check for entityId in local storage here, as the check is now above
+            console.log('Navigating private entity to /private-dashboard.');
+            navigate('/private-dashboard', { replace: true });
+
+          } else {
+            navigate('/dashboard', { replace: true });
+          }
         } else {
-          setError('Access denied. Only administrators are allowed to login.');
+          setError('Access denied. Only administrators or private entities are allowed to login.');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           localStorage.removeItem('firestoreAuthToken');
@@ -120,8 +220,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <Box 
-      className="login-container"
+    <Box
       sx={{
         minHeight: '100vh',
         width: '100vw',
@@ -150,9 +249,9 @@ const AdminLogin = () => {
           zIndex: 0,
         }}
       />
-      <Container 
-        maxWidth="xs" 
-        sx={{ 
+      <Container
+        maxWidth="xs"
+        sx={{
           position: 'relative',
           zIndex: 2,
           display: 'flex',
@@ -160,112 +259,60 @@ const AdminLogin = () => {
           alignItems: 'center',
         }}
       >
-        <Box
+        <Paper
+          elevation={6}
           sx={{
-            bgcolor: 'white',
-            borderRadius: '24px',
-            p: '24px',
+            padding: '40px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
+            borderRadius: '12px',
             width: '100%',
-            maxWidth: '360px',
-            textAlign: 'center',
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            maxWidth: '400px',
+            bgcolor: 'white', // Explicitly set background color
           }}
         >
-          <Box sx={{ mb: 2.5 }}>
-            <img 
-              src="/loginlogo.jpg" 
-              alt="GrabTrash Logo" 
-              style={{ 
-                height: '80px',
-                objectFit: 'contain',
-                marginBottom: '12px'
-              }} 
+          <Box
+            component="img"
+            sx={{
+              height: 80,
+              mb: 2,
+            }}
+            alt="GrabTrash Logo"
+            src="/loginlogo.jpg"
+          />
+          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
+            Welcome back
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+            {error && (
+              <Alert severity="error" sx={{ mt: 2, mb: 1 }}>{error}</Alert>
+            )}
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="emailOrPhone"
+              label="Email or phone number"
+              name="emailOrPhone"
+              autoComplete="email"
+              autoFocus
+              value={credentials.emailOrPhone}
+              onChange={handleChange}
             />
-            <Typography variant="h4" sx={{ 
-              fontWeight: 600, 
-              color: '#333',
-              mb: 0.5,
-              fontSize: '26px',
-            }}>
-              Welcome back
-            </Typography>
-            <Typography sx={{ 
-              color: '#6B7280',
-              fontSize: '14px',
-            }}>
-              We're so excited to see you again!
-            </Typography>
-          </Box>
-
-          {error && (
-            <Typography 
-              sx={{ 
-                color: '#DC2626',
-                fontSize: '14px',
-                mb: 2,
-                textAlign: 'left'
-              }}
-            >
-              {error}
-            </Typography>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <Box sx={{ mb: 2 }}>
-              <Typography 
-                sx={{ 
-                  textAlign: 'left', 
-                  mb: 0.5,
-                  fontSize: '13px',
-                  color: '#374151',
-                }}
-              >
-                Email or phone number
-              </Typography>
-              <TextField
-                fullWidth
-                name="emailOrPhone"
-                value={credentials.emailOrPhone}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                    bgcolor: 'white',
-                  }
-                }}
-              />
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <Typography 
-                sx={{ 
-                  textAlign: 'left', 
-                  mb: 0.5,
-                  fontSize: '13px',
-                  color: '#374151',
-                }}
-              >
-                Password
-              </Typography>
-              <TextField
-                fullWidth
-                type="password"
-                name="password"
-                value={credentials.password}
-                onChange={handleChange}
-                variant="outlined"
-                size="small"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                    bgcolor: 'white',
-                  }
-                }}
-              />
-            </Box>
-
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={credentials.password}
+              onChange={handleChange}
+            />
             <Link
               component={RouterLink}
               to="/forgot-password"
@@ -283,29 +330,17 @@ const AdminLogin = () => {
             >
               Forget your password
             </Link>
-
             <Button
               type="submit"
               fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
               disabled={loading}
-              sx={{
-                bgcolor: '#4CAF50',
-                color: 'white',
-                py: 1.25,
-                textTransform: 'none',
-                fontSize: '15px',
-                fontWeight: 500,
-                borderRadius: '8px',
-                mb: 1.5,
-                '&:hover': {
-                  bgcolor: '#43A047',
-                }
-              }}
             >
-              {loading ? 'Logging in...' : 'Log in'}
+              {loading ? <CircularProgress size={24} /> : 'Log in'}
             </Button>
-          </form>
-        </Box>
+          </Box>
+        </Paper>
       </Container>
     </Box>
   );

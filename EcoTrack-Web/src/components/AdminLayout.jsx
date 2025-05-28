@@ -18,6 +18,10 @@ const AdminLayout = ({ children }) => {
     lastName: '',
     email: '',
   });
+  const [role, setRole] = useState(null);
+
+  // Determine user role for menu filtering
+  const isPrivateEntity = role === 'private_entity';
 
   // Function to check if menu item is active
   const isActive = (path) => {
@@ -87,6 +91,13 @@ const AdminLayout = ({ children }) => {
     };
   }, [navigate]);
 
+  useEffect(() => {
+    const userRole = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+    setRole(userRole);
+  }, []);
+
+  if (!role) return null;
+
   return (
     <Box 
       sx={{ 
@@ -130,6 +141,7 @@ const AdminLayout = ({ children }) => {
           />
         </Box>
 
+        {/* Always show Dashboard */}
         <Box
           sx={getMenuItemStyles('/dashboard')}
           onClick={() => navigate('/dashboard')}
@@ -140,6 +152,9 @@ const AdminLayout = ({ children }) => {
           </Typography>
         </Box>
 
+        {/* Only show these if NOT private_entity */}
+        {!isPrivateEntity && (
+          <>
         <Box
           sx={getMenuItemStyles('/collection-points')}
           onClick={() => navigate('/collection-points')}
@@ -169,7 +184,10 @@ const AdminLayout = ({ children }) => {
             Users
           </Typography>
         </Box>
+          </>
+        )}
 
+        {/* Always show Job Order Request and Trucks */}
         <Box
           sx={getMenuItemStyles('/job-orders')}
           onClick={() => navigate('/job-orders')}

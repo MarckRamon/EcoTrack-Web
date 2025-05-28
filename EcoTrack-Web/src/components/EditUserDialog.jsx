@@ -129,7 +129,7 @@ const EditUserDialog = ({ open, onClose, user, onSave }) => {
               User ID
             </Typography>
             <Typography sx={{ color: '#6B7280', fontSize: '14px' }}>
-              {user?.id || 'N/A'}
+              {user?.userId || 'N/A'}
             </Typography>
           </Box>
 

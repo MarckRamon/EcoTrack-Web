@@ -37,6 +37,7 @@ const Users = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [allowed, setAllowed] = useState(null);
 
   // Fetch users from backend
   const fetchUsers = async () => {
@@ -68,6 +69,15 @@ const Users = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+    if (role !== 'admin') {
+      navigate('/dashboard');
+    } else {
+      setAllowed(true);
+    }
+  }, [navigate]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -172,6 +182,8 @@ const Users = () => {
         return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     }
   });
+
+  if (allowed === null) return null;
 
   if (loading) {
     return (

@@ -6,6 +6,7 @@ import L from 'leaflet';
 import AdminLayout from './components/AdminLayout';
 import { Box, Typography, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Fix for default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,6 +14,26 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom Red Icon for Private Entities
+const redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+// Custom Green Icon for Job Orders
+const greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
 // API base URL - updating to match backend URL
@@ -45,6 +66,8 @@ function MapEvents({ isAddingMarker, onAddMarker }) {
 
 function CollectionPoints() {
   const [markers, setMarkers] = useState([]);
+  const [privateEntityMarkers, setPrivateEntityMarkers] = useState([]);
+  const [jobOrderMarkers, setJobOrderMarkers] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isAddingMarker, setIsAddingMarker] = useState(false);
   const [editingMarker, setEditingMarker] = useState(null);
@@ -58,38 +81,113 @@ function CollectionPoints() {
     message: '',
     severity: 'success'
   });
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(null);
 
-  // Fetch all collection points on component mount
   useEffect(() => {
-    fetchCollectionPoints();
-  }, []);
+    const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+    if (role !== 'admin') {
+      navigate('/dashboard');
+    } else {
+      setAllowed(true);
+    }
+  }, [navigate]);
+
+  // Fetch all collection points and private entities on component mount
+  useEffect(() => {
+    const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+    if (role !== 'admin') {
+      navigate('/dashboard');
+    } else {
+        fetchCollectionPoints();
+        fetchPrivateEntities(); // Fetch private entities
+        fetchJobOrders(); // Fetch job orders
+    }
+  }, [navigate]);
 
   const fetchCollectionPoints = async () => {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/api/pickup-locations`,
-        { 
+        {
           headers: getAuthHeader(),
           withCredentials: true
         }
       );
-      
-      console.log('Raw response from fetch:', response.data);
-      
+
+      console.log('Raw response from fetch (pickup-locations):', response.data);
+
       if (response.data && response.data.success) {
         // Extract the locations array from the response
         const locations = response.data.locations || [];
-        console.log('Processed locations:', locations);
-        
+        console.log('Processed pickup-locations:', locations);
+
         setMarkers(locations);
       } else {
-        console.error('Invalid response structure:', response.data);
+        console.error('Invalid response structure (pickup-locations):', response.data);
         showNotification('Failed to fetch collection points', 'error');
       }
     } catch (error) {
       console.error('Error fetching collection points:', error);
       showNotification('Error fetching collection points', 'error');
     }
+  };
+
+  const fetchPrivateEntities = async () => {
+      try {
+          const response = await axios.get(
+              `${API_BASE_URL}/api/private-entities`, // Assuming this endpoint exists
+              {
+                  headers: getAuthHeader(),
+                  withCredentials: true
+              }
+          );
+
+          console.log('Raw response from fetch (private-entities):', response.data);
+
+          if (response.data && Array.isArray(response.data.entities)) { // Check if response data exists and contains an entities array
+               console.log('Processed private-entities:', response.data);
+               // Filter out entities that don't have latitude and longitude
+               const validEntities = response.data.entities.filter(entity => entity.latitude && entity.longitude);
+               setPrivateEntityMarkers(validEntities);
+           } else {
+               console.error('Invalid response structure (private-entities):', response.data);
+               showNotification('Failed to fetch private entities', 'error');
+           }
+       } catch (error) {
+           console.error('Error fetching private entities:', error);
+           // Don't show a notification for this error to avoid clutter if the endpoint doesn't exist yet
+           // showNotification('Error fetching private entities', 'error');
+           setPrivateEntityMarkers([]); // Ensure state is reset on error
+       }
+  };
+
+  const fetchJobOrders = async () => {
+      try {
+          const response = await axios.get(
+              `${API_BASE_URL}/api/payments`, // Endpoint for job orders/payments
+              {
+                  headers: getAuthHeader(),
+                  withCredentials: true
+              }
+          );
+
+          console.log('Raw response from fetch (payments):', response.data);
+
+          if (response.data && Array.isArray(response.data)) { // Assuming the payments endpoint returns an array directly
+               console.log('Processed payments:', response.data);
+               // Filter out payments that don't have latitude and longitude
+               const validJobOrders = response.data.filter(order => order.latitude && order.longitude);
+               setJobOrderMarkers(validJobOrders);
+           } else {
+               console.error('Invalid response structure (payments):', response.data);
+               showNotification('Failed to fetch job orders', 'error');
+           }
+       } catch (error) {
+           console.error('Error fetching job orders:', error);
+           showNotification('Error fetching job orders', 'error');
+           setJobOrderMarkers([]); // Ensure state is reset on error
+       }
   };
 
   const showNotification = (message, severity = 'success') => {
@@ -107,7 +205,7 @@ function CollectionPoints() {
   // Function to handle adding new markers
   const handleAddMarker = async (lat, lng) => {
     console.log('handleAddMarker called with:', lat, lng);
-    
+
     try {
       // Reverse geocoding using Nominatim API
       const response = await fetch(
@@ -159,21 +257,21 @@ function CollectionPoints() {
         ...locationData,
         id: response.data.id
       };
-      
+
       console.log('New marker created:', newMarker);
-      
+
       // Update local state immediately
       setMarkers(prevMarkers => [...prevMarkers, newMarker]);
       showNotification('Collection point added successfully');
-      
+
       // Reset form and selection
       setFormData({ siteName: '', wasteType: '', address: '' });
       setSelectedLocation(null);
       setIsAddingMarker(false);
-      
+
       // Fetch fresh data from server to ensure consistency
       await fetchCollectionPoints();
-      
+
     } catch (error) {
       console.error('Save error:', error);
       if (error.response) {
@@ -273,11 +371,11 @@ function CollectionPoints() {
               : marker
           )
         );
-        
+
         showNotification('Collection point updated successfully');
         setEditingMarker(null);
         setFormData({ siteName: '', wasteType: '', address: '' });
-        
+
         // Refresh the markers to ensure consistency
         await fetchCollectionPoints();
       } else {
@@ -308,6 +406,8 @@ function CollectionPoints() {
     setFormData({ siteName: '', wasteType: '', address: '' });
   };
 
+  if (allowed === null) return null;
+
   return (
     <AdminLayout>
       <Box
@@ -323,9 +423,9 @@ function CollectionPoints() {
       >
         <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e5e7eb' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography 
-              variant="h4" 
-              sx={{ 
+            <Typography
+              variant="h4"
+              sx={{
                 color: '#000000',
                 fontWeight: 600,
                 fontSize: '2rem',
@@ -365,13 +465,13 @@ function CollectionPoints() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                
+
                 <MapEvents isAddingMarker={isAddingMarker} onAddMarker={handleAddMarker} />
 
-                {/* Existing saved markers */}
+                {/* Existing saved (public) markers */}
                 {markers && markers.length > 0 && markers.map((marker) => (
-                  <Marker 
-                    key={marker.id} 
+                  <Marker
+                    key={marker.id}
                     position={[parseFloat(marker.latitude), parseFloat(marker.longitude)]}
                   >
                     <Popup>
@@ -469,6 +569,45 @@ function CollectionPoints() {
                   </Marker>
                 ))}
 
+                {/* Private Entity markers */}
+                {privateEntityMarkers && privateEntityMarkers.length > 0 && privateEntityMarkers.map((entity) => (
+                    <Marker
+                        key={entity.entityId} // Assuming entityId is unique
+                        position={[parseFloat(entity.latitude), parseFloat(entity.longitude)]}
+                        icon={redIcon} // Use the custom red icon
+                    >
+                        <Popup>
+                            <div className="p-2">
+                                <h3 className="font-bold text-lg mb-2">{entity.entityName || 'Private Entity'}</h3>
+                                <p className="mb-1"><strong>Waste Type:</strong> {entity.entityWasteType || 'N/A'}</p>
+                                <p className="mb-1"><strong>Status:</strong> {entity.entityStatus || 'N/A'}</p>
+                                <p className="mb-3"><strong>Address:</strong> {entity.address || 'N/A'}</p>
+                                {/* You can add more details from the entity object here if needed */}
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Job Order markers (Green Pins) */}
+                {jobOrderMarkers && jobOrderMarkers.length > 0 && jobOrderMarkers.map((order) => (
+                    <Marker
+                        key={order.id} // Assuming each payment has a unique id
+                        position={[parseFloat(order.latitude), parseFloat(order.longitude)]}
+                        icon={greenIcon} // Use the custom green icon
+                    >
+                        <Popup>
+                            <div className="p-2">
+                                <h3 className="font-bold text-lg mb-2">Job Order #{order.id}</h3>
+                                <p className="mb-1"><strong>Customer:</strong> {order.customerName || 'N/A'}</p>
+                                <p className="mb-1"><strong>Address:</strong> {order.address || 'N/A'}</p>
+                                <p className="mb-1"><strong>Amount:</strong> ₱{order.amount ? Number(order.amount).toLocaleString() : 'N/A'}</p>
+                                <p className="mb-1"><strong>Status:</strong> {order.jobOrderStatus || 'N/A'}</p>
+                                {/* Add other relevant job order details here */}
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
                 {/* Temporary marker for new location */}
                 {selectedLocation && (
                   <Marker position={[selectedLocation.lat, selectedLocation.lng]}>
@@ -535,9 +674,9 @@ function CollectionPoints() {
           </div>
         </Box>
 
-        <Snackbar 
-          open={notification.open} 
-          autoHideDuration={6000} 
+        <Snackbar
+          open={notification.open}
+          autoHideDuration={6000}
           onClose={handleCloseNotification}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         >

@@ -29,6 +29,9 @@ const monthlyData = [
 ];
 
 const AdminDashboard = () => {
+  const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+  const isAdmin = role === 'admin';
+
   const [totalActiveUsers, setTotalActiveUsers] = useState(0);
   const [totalPickupTrash, setTotalPickupTrash] = useState(0);
   const [totalCollectionPoints, setTotalCollectionPoints] = useState(0);
@@ -41,35 +44,40 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch total active users
-        const usersResponse = await api.get('/users/total-active');
-        console.log('Active Users Response:', usersResponse.data);
-        setTotalActiveUsers(usersResponse.data.totalActiveUsers || 0);
+        if (isAdmin) {
+          // Admin-only API calls
+          const usersResponse = await api.get('/users/total-active');
+          setTotalActiveUsers(usersResponse.data.totalActiveUsers || 0);
 
-        // Fetch total pickup trash ordered
-        const statsResponse = await api.get('/payments/dashboard/stats');
-        console.log('Pickup Trash Stats Response:', statsResponse.data);
-        setTotalPickupTrash(statsResponse.data.totalPickupTrashOrdered || 0);
+          const statsResponse = await api.get('/payments/dashboard/stats');
+          setTotalPickupTrash(statsResponse.data.totalPickupTrashOrdered || 0);
 
-        try {
-          // Fetch total collection points by fetching all pickup locations and counting them
-          const collectionPointsResponse = await api.get('/pickup-locations');
-          const locations = collectionPointsResponse.data.locations || [];
-          setTotalCollectionPoints(locations.length);
-        } catch (error) {
-          console.warn('Could not fetch collection points:', error.message);
-          // Keep default value (0) if endpoint is not available
+          try {
+            const collectionPointsResponse = await api.get('/pickup-locations');
+            const locations = collectionPointsResponse.data.locations || [];
+            setTotalCollectionPoints(locations.length);
+          } catch (error) {
+            setTotalCollectionPoints(0);
+          }
+        } else {
+          // For private_entity, only fetch what is allowed (e.g., collection points)
+          setTotalActiveUsers(0);
+          setTotalPickupTrash(0);
+          setTotalCollectionPoints(0);
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        // Handle error
+        setTotalActiveUsers(0);
+        setTotalPickupTrash(0);
+        setTotalCollectionPoints(0);
       }
     };
-
     fetchDashboardData();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     // Fetch barangays for calendar
+    if (!isAdmin) return; // Only admin can see barangay calendar
     const fetchBarangays = async () => {
       try {
         const res = await api.get('/barangays');
@@ -81,12 +89,13 @@ const AdminDashboard = () => {
       }
     };
     fetchBarangays();
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     // Fetch schedules for selected barangay
+    if (!isAdmin) return;
+    if (!selectedBarangay) return;
     const fetchSchedules = async () => {
-      if (!selectedBarangay) return;
       try {
         const res = await api.get(`/collection-schedules/barangay/${selectedBarangay.barangayId}`);
         setBarangaySchedules(Array.isArray(res.data) ? res.data : [res.data]);
@@ -95,9 +104,10 @@ const AdminDashboard = () => {
       }
     };
     fetchSchedules();
-  }, [selectedBarangay]);
+  }, [selectedBarangay, isAdmin]);
 
   useEffect(() => {
+    // Fetch top barangays (allowed for both roles)
     const fetchTopBarangays = async () => {
       try {
         const res = await api.get('/payments/top-barangays');
@@ -147,16 +157,18 @@ const AdminDashboard = () => {
 
       {/* Stats Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', bgcolor: 'white' }}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontSize: '14px' }}>
-              Active Users
-            </Typography>
-            <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
-              {totalActiveUsers}
-            </Typography>
-          </Paper>
-        </Grid>
+        {isAdmin && (
+          <Grid item xs={12} sm={4}>
+            <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', bgcolor: 'white' }}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontSize: '14px' }}>
+                Active Users
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 600, color: '#333' }}>
+                {totalActiveUsers}
+              </Typography>
+            </Paper>
+          </Grid>
+        )}
         <Grid item xs={12} sm={4}>
           <Paper sx={{ p: 2.5, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', bgcolor: 'white' }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1, fontSize: '14px' }}>
@@ -272,6 +284,7 @@ const AdminDashboard = () => {
         </Grid>
 
         {/* Right Column - Activity and Calendar */}
+        {isAdmin && (
         <Grid item xs={12} md={7}>
           {/* Activity Chart */}
           <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', mb: 3, bgcolor: 'white' }}>
@@ -429,6 +442,7 @@ const AdminDashboard = () => {
             </Box>
           </Paper>
         </Grid>
+        )}
       </Grid>
     </AdminLayout>
   );

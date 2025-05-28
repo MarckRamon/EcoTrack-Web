@@ -25,8 +25,10 @@ import AdminLayout from './components/AdminLayout';
 import schedulesService from './services/schedulesService';
 import ScheduleDialog from './components/ScheduleDialog';
 import './CollectionSchedule.css'; // We'll create this CSS file too
+import { useNavigate } from 'react-router-dom';
 
 const CollectionSchedule = () => {
+  const navigate = useNavigate();
   // State for calendar and schedules
   const [viewMode, setViewMode] = useState('week'); // day, week, month, year
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -50,6 +52,8 @@ const CollectionSchedule = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [allowed, setAllowed] = useState(null);
+
   // Format date for display
   const formatDate = (date) => {
     return date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
@@ -60,7 +64,7 @@ const CollectionSchedule = () => {
   };
 
   // Navigate to previous or next time period
-  const navigate = (direction) => {
+  const navigateTo = (direction) => {
     const newDate = new Date(currentDate);
     
     if (viewMode === 'day') {
@@ -445,6 +449,18 @@ const CollectionSchedule = () => {
   // Generate hours for the day (from 7 AM to 5 PM as shown in the image)
   const hours = Array.from({ length: 11 }, (_, i) => i + 7); // 7 AM to 5 PM
 
+  // Check access
+  useEffect(() => {
+    const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
+    if (role !== 'admin') {
+      navigate('/dashboard');
+    } else {
+      setAllowed(true);
+    }
+  }, [navigate]);
+
+  if (allowed === null) return null;
+
   // Loading state
   if (isLoading && allSchedules.length === 0) {
     return (
@@ -549,14 +565,14 @@ const CollectionSchedule = () => {
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', mx: 2 }}>
               <Button 
-                onClick={() => navigate('prev')}
+                onClick={() => navigateTo('prev')}
                 variant="outlined"
                 sx={{ minWidth: 40, p: 0.5, borderRadius: '50%', mr: 1 }}
               >
                 &lt;
               </Button>
               <Button 
-                onClick={() => navigate('next')}
+                onClick={() => navigateTo('next')}
                 variant="outlined"
                 sx={{ minWidth: 40, p: 0.5, borderRadius: '50%' }}
               >
