@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import './CollectionPoints.css';
 import L from 'leaflet';
 import AdminLayout from './components/AdminLayout';
-import { Box, Typography, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Snackbar, Alert, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -83,6 +83,7 @@ function CollectionPoints() {
   });
   const navigate = useNavigate();
   const [allowed, setAllowed] = useState(null);
+  const [jobOrderStatusFilter, setJobOrderStatusFilter] = useState('All');
 
   useEffect(() => {
     const role = (JSON.parse(localStorage.getItem('user') || '{}').role || '').toLowerCase();
@@ -406,6 +407,11 @@ function CollectionPoints() {
     setFormData({ siteName: '', wasteType: '', address: '' });
   };
 
+  // Filtered job orders based on filter
+  const filteredJobOrderMarkers = jobOrderStatusFilter === 'All'
+    ? jobOrderMarkers
+    : jobOrderMarkers.filter(order => (order.jobOrderStatus || '').toLowerCase() === jobOrderStatusFilter.toLowerCase());
+
   if (allowed === null) return null;
 
   return (
@@ -423,17 +429,52 @@ function CollectionPoints() {
       >
         <Box sx={{ p: 2, bgcolor: 'white', borderBottom: '1px solid #e5e7eb' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography
-              variant="h4"
-              sx={{
-                color: '#000000',
-                fontWeight: 600,
-                fontSize: '2rem',
-                backgroundColor: 'white'
-              }}
-            >
-              Collection Points
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Typography
+                variant="h4"
+                sx={{
+                  color: '#000000',
+                  fontWeight: 600,
+                  fontSize: '2rem',
+                  backgroundColor: 'white',
+                  mr: 2
+                }}
+              >
+                Collection Points
+              </Typography>
+              {/* Legend */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 16, height: 16, bgcolor: '#3388ff', borderRadius: '50%' }} />
+                  <Typography sx={{ fontSize: '0.875rem', color: '#475569', ml: 0.5 }}>Public Dumpsites</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 16, height: 16, bgcolor: '#dc2626', borderRadius: '50%' }} />
+                  <Typography sx={{ fontSize: '0.875rem', color: '#475569', ml: 0.5 }}>Private Entities</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 16, height: 16, bgcolor: '#22c55e', borderRadius: '50%' }} />
+                  <Typography sx={{ fontSize: '0.875rem', color: '#475569', ml: 0.5 }}>Job Orders</Typography>
+                </Box>
+              </Box>
+              {/* Filter Orders Dropdown */}
+              <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
+                <InputLabel id="job-order-status-label">Filter Orders</InputLabel>
+                <Select
+                  labelId="job-order-status-label"
+                  id="job-order-status-select"
+                  value={jobOrderStatusFilter}
+                  label="Filter Orders"
+                  onChange={e => setJobOrderStatusFilter(e.target.value)}
+                >
+                  <MenuItem value="All">All</MenuItem>
+                  <MenuItem value="Available">Available</MenuItem>
+                  <MenuItem value="Accepted">Accepted</MenuItem>
+                  <MenuItem value="In-Progress">In-Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
             <button
               onClick={() => {
                 setIsAddingMarker(!isAddingMarker);
@@ -589,7 +630,7 @@ function CollectionPoints() {
                 ))}
 
                 {/* Job Order markers (Green Pins) */}
-                {jobOrderMarkers && jobOrderMarkers.length > 0 && jobOrderMarkers.map((order) => (
+                {filteredJobOrderMarkers && filteredJobOrderMarkers.length > 0 && filteredJobOrderMarkers.map((order) => (
                     <Marker
                         key={order.id} // Assuming each payment has a unique id
                         position={[parseFloat(order.latitude), parseFloat(order.longitude)]}

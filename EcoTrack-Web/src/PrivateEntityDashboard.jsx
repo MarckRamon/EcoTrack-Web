@@ -124,15 +124,15 @@ const PrivateEntityDashboard = () => {
     setStatus(newStatus); // Optimistically update status
     setError(''); // Clear previous errors
 
-    if (!entityId) {
-      setError('Entity ID not found. Cannot update status.');
+    if (!userId) {
+      setError('User ID not found. Cannot update status.');
       setStatus(previousStatus); // Revert status
       return;
     }
 
     try {
-      // Send status to backend
-      await api.put(`/private-entities/${entityId}`, { entityStatus: newStatus.toUpperCase() });
+      // Send status to backend using userId instead of entityId
+      await api.put(`/private-entities/${userId}`, { entityStatus: newStatus.toUpperCase() });
     } catch (err) {
       setError(`Failed to update status to ${newStatus}. Please try again.`);
       console.error('Status update error:', err);

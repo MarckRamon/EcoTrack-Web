@@ -110,20 +110,19 @@ const EditPrivateEntityPin = () => {
 
         if (response.data) {
           setEntityData(response.data);
-          // Populate form data with fetched entity data
+          // Populate form data with fetched entity data, defaulting to '' if null
           setFormData({
               entityName: response.data.entityName || '',
               entityWasteType: response.data.entityWasteType 
                                  ? response.data.entityWasteType.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) 
-                                 : '', // Convert to Title Case to match MenuItem values
+                                 : '',
               address: response.data.address || '',
           });
-          // Set initial marker position from fetched data
+          // Set initial marker position from fetched data, default to 0 if missing
           if (response.data.latitude && response.data.longitude) {
             setMarkerPosition({ lat: parseFloat(response.data.latitude), lng: parseFloat(response.data.longitude) });
           } else {
               setError('Entity location data missing. Please reposition the pin.');
-              // Set a default center or leave markerPosition null
               setMarkerPosition({ lat: 10.2447, lng: 123.8505 }); // Default center
           }
         } else {
@@ -203,7 +202,14 @@ const EditPrivateEntityPin = () => {
 
     // Handle Save button click
     const handleSave = async () => {
-        if (!entityData || !markerPosition || !formData.entityName || !formData.entityWasteType || !formData.address) {
+        // Use default values if any field is missing
+        const safeFormData = {
+            entityName: formData.entityName || '',
+            entityWasteType: formData.entityWasteType || '',
+            address: formData.address || '',
+        };
+        const safeMarkerPosition = markerPosition || { lat: 0, lng: 0 };
+        if (!entityData || !safeMarkerPosition || !safeFormData.entityName || !safeFormData.entityWasteType || !safeFormData.address) {
             showNotification('Please ensure all details are filled and the pin is placed.', 'warning');
             return;
         }
@@ -214,11 +220,11 @@ const EditPrivateEntityPin = () => {
 
             const updatedData = {
                 ...entityData, // Start with existing data
-                entityName: formData.entityName,
-                entityWasteType: formData.entityWasteType,
-                address: formData.address,
-                latitude: markerPosition.lat, // Use new latitude
-                longitude: markerPosition.lng, // Use new longitude
+                entityName: safeFormData.entityName,
+                entityWasteType: safeFormData.entityWasteType,
+                address: safeFormData.address,
+                latitude: safeMarkerPosition.lat || 0, // Use new latitude, default 0
+                longitude: safeMarkerPosition.lng || 0, // Use new longitude, default 0
             };
 
             // Remove entityId from the update data if your PUT endpoint doesn't expect it in the body
@@ -227,7 +233,7 @@ const EditPrivateEntityPin = () => {
             console.log('Saving updated entity data:', updatedData);
 
             const response = await axios.put(
-                `${API_BASE_URL}/api/private-entities/${userId}`, // Use userId for the PUT request URL
+                `${API_BASE_URL}/api/private-entities/${userId}`,
                 updatedData,
                 {
                     headers: getAuthHeader(),

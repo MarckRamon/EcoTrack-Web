@@ -202,23 +202,18 @@ const Users = () => {
 
   return (
     <AdminLayout>
-      <Box sx={{ p: 3, maxWidth: '100%' }}>
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#333' }}>
+      <Box sx={{ p: { xs: 1, md: 4 }, maxWidth: '100%', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+        <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: '#1e293b', letterSpacing: 1 }}>
           Users
         </Typography>
-
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
+          <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>
         )}
-
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>
             All Users
           </Typography>
-
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button
               variant="contained"
               color="primary"
@@ -277,10 +272,9 @@ const Users = () => {
             </Box>
           </Box>
         </Box>
-
-        <TableContainer component={Paper} sx={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ boxShadow: '0 4px 24px rgba(30,41,59,0.08)', borderRadius: 3, overflow: 'hidden' }}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: '#f1f5f9' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Name</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Role</TableCell>
@@ -289,49 +283,47 @@ const Users = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sortedUsers
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((user) => (
-                  <TableRow key={user.userId}>
-                    <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
-                    <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleEdit(user)}
-                          sx={{
-                            color: '#059669',
-                            borderColor: '#059669',
-                            '&:hover': {
-                              borderColor: '#047857',
-                              bgcolor: '#f0fdf4',
-                            },
-                          }}
-                        >
-                          EDIT
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleDelete(user.userId)}
-                          sx={{
-                            color: '#dc2626',
-                            borderColor: '#dc2626',
-                            '&:hover': {
-                              borderColor: '#b91c1c',
-                              bgcolor: '#fef2f2',
-                            },
-                          }}
-                        >
-                          DELETE
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {sortedUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((user) => (
+                <TableRow key={user.userId} hover sx={{ transition: 'background 0.2s', '&:hover': { bgcolor: '#e0f2fe' } }}>
+                  <TableCell>{`${user.firstName} ${user.lastName}`}</TableCell>
+                  <TableCell sx={{ textTransform: 'capitalize' }}>{user.role}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleEdit(user)}
+                        sx={{
+                          color: '#059669',
+                          borderColor: '#059669',
+                          '&:hover': {
+                            borderColor: '#047857',
+                            bgcolor: '#f0fdf4',
+                          },
+                        }}
+                      >
+                        EDIT
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => handleDelete(user.userId)}
+                        sx={{
+                          color: '#dc2626',
+                          borderColor: '#dc2626',
+                          '&:hover': {
+                            borderColor: '#b91c1c',
+                            bgcolor: '#fef2f2',
+                          },
+                        }}
+                      >
+                        DELETE
+                      </Button>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
           <TablePagination
@@ -342,22 +334,23 @@ const Users = () => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e5e7eb' }}
           />
         </TableContainer>
+        <EditUserDialog
+          open={editDialogOpen}
+          onClose={handleCloseDialog}
+          user={selectedUser}
+          onSave={handleSaveUser}
+          PaperProps={{ sx: { borderRadius: 3, p: 2 } }}
+        />
+        <CreateUserDialog
+          open={createDialogOpen}
+          onClose={() => setCreateDialogOpen(false)}
+          onUserCreated={fetchUsers}
+          PaperProps={{ sx: { borderRadius: 3, p: 2 } }}
+        />
       </Box>
-
-      <EditUserDialog
-        open={editDialogOpen}
-        onClose={handleCloseDialog}
-        user={selectedUser}
-        onSave={handleSaveUser}
-      />
-
-      <CreateUserDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-        onUserCreated={fetchUsers}
-      />
     </AdminLayout>
   );
 };

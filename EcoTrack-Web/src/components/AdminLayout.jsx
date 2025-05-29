@@ -8,6 +8,7 @@ import {
   Person,
   Assignment,
   LocalShipping,
+  Home,
 } from '@mui/icons-material';
 
 const AdminLayout = ({ children }) => {
@@ -37,8 +38,12 @@ const AdminLayout = ({ children }) => {
     mb: 1,
     cursor: 'pointer',
     bgcolor: isActive(path) ? '#e6f4ea' : 'transparent',
+    transition: 'all 0.2s ease-in-out',
+    transform: 'translateX(0)',
     '&:hover': { 
-      bgcolor: isActive(path) ? '#e6f4ea' : '#f1f5f9' 
+      bgcolor: isActive(path) ? '#e6f4ea' : '#f1f5f9',
+      transform: 'translateX(8px)',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
     },
   });
 
@@ -141,6 +146,21 @@ const AdminLayout = ({ children }) => {
           />
         </Box>
 
+        {/* Services Section */}
+        <Typography
+          sx={{
+            px: 1.5,
+            py: 1,
+            color: '#64748B',
+            fontSize: '12px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Services
+        </Typography>
+
         {/* Always show Dashboard */}
         <Box
           sx={getMenuItemStyles('/dashboard')}
@@ -152,42 +172,7 @@ const AdminLayout = ({ children }) => {
           </Typography>
         </Box>
 
-        {/* Only show these if NOT private_entity */}
-        {!isPrivateEntity && (
-          <>
-        <Box
-          sx={getMenuItemStyles('/collection-points')}
-          onClick={() => navigate('/collection-points')}
-        >
-          <LocationOn sx={getIconStyles('/collection-points')} />
-          <Typography sx={getTextStyles('/collection-points')}>
-            Collection Points
-          </Typography>
-        </Box>
-
-        <Box
-          sx={getMenuItemStyles('/schedule')}
-          onClick={() => navigate('/schedule')}
-        >
-          <CalendarToday sx={getIconStyles('/schedule')} />
-          <Typography sx={getTextStyles('/schedule')}>
-            Collection Schedule
-          </Typography>
-        </Box>
-
-        <Box
-          sx={getMenuItemStyles('/users')}
-          onClick={() => navigate('/users')}
-        >
-          <Person sx={getIconStyles('/users')} />
-          <Typography sx={getTextStyles('/users')}>
-            Users
-          </Typography>
-        </Box>
-          </>
-        )}
-
-        {/* Always show Job Order Request and Trucks */}
+        {/* Job Order Request */}
         <Box
           sx={getMenuItemStyles('/job-orders')}
           onClick={() => navigate('/job-orders')}
@@ -198,6 +183,61 @@ const AdminLayout = ({ children }) => {
           </Typography>
         </Box>
 
+        {/* Only show these if NOT private_entity */}
+        {!isPrivateEntity && (
+          <>
+            <Box
+              sx={getMenuItemStyles('/collection-points')}
+              onClick={() => navigate('/collection-points')}
+            >
+              <LocationOn sx={getIconStyles('/collection-points')} />
+              <Typography sx={getTextStyles('/collection-points')}>
+                Collection Points
+              </Typography>
+            </Box>
+
+            <Box
+              sx={getMenuItemStyles('/schedule')}
+              onClick={() => navigate('/schedule')}
+            >
+              <CalendarToday sx={getIconStyles('/schedule')} />
+              <Typography sx={getTextStyles('/schedule')}>
+                Collection Schedule
+              </Typography>
+            </Box>
+          </>
+        )}
+
+        {/* Management Section */}
+        <Typography
+          sx={{
+            px: 1.5,
+            py: 1,
+            mt: 2,
+            color: '#64748B',
+            fontSize: '12px',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Management
+        </Typography>
+
+        {/* Barangays */}
+        {!isPrivateEntity && (
+          <Box
+            sx={getMenuItemStyles('/barangays')}
+            onClick={() => navigate('/barangays')}
+          >
+            <Home sx={getIconStyles('/barangays')} />
+            <Typography sx={{ ...getTextStyles('/barangays'), fontSize: '16px' }}>
+              Barangays
+            </Typography>
+          </Box>
+        )}
+
+        {/* Trucks */}
         <Box
           sx={getMenuItemStyles('/trucks')}
           onClick={() => navigate('/trucks')}
@@ -207,6 +247,19 @@ const AdminLayout = ({ children }) => {
             Trucks
           </Typography>
         </Box>
+
+        {/* Users */}
+        {!isPrivateEntity && (
+          <Box
+            sx={getMenuItemStyles('/users')}
+            onClick={() => navigate('/users')}
+          >
+            <Person sx={getIconStyles('/users')} />
+            <Typography sx={getTextStyles('/users')}>
+              Users
+            </Typography>
+          </Box>
+        )}
 
         {/* User Profile */}
         <Box sx={{ mt: 'auto', pt: 3, borderTop: '1px solid #e5e7eb' }}>

@@ -11,6 +11,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 // import AdminLayout from './components/AdminLayout'; // Remove AdminLayout import
 import api from './api/axios';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -114,8 +116,7 @@ const EditProfile = () => {
       const response = await api.put(`/users/profile/${userId}`, {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        // Do not send email if it's not allowed to be updated via this endpoint
-        // email: formData.email 
+        email: formData.email // Always send email to prevent it from becoming null
       });
 
       if (response.data) {
@@ -166,127 +167,139 @@ const EditProfile = () => {
   };
 
   return (
-    <Box sx={{ 
-      width: '100%',
-      maxWidth: '800px', // Reduced max width for a more focused form
-      margin: '40px auto', // Center the box and add top/bottom margin
-      bgcolor: 'white',
-      borderRadius: 2,
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-      p: 4, // Increased padding
-      minHeight: 'calc(100vh - 80px)', // Ensure it takes up reasonable height
+    <Box sx={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      bgcolor: '#f8fafc',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
     }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <Box sx={{
+        width: '100%',
+        maxWidth: 480,
+        bgcolor: 'white',
+        borderRadius: 4,
+        boxShadow: '0 8px 32px rgba(30,41,59,0.10)',
+        p: { xs: 2, sm: 4 },
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        mb: 4 // Increased bottom margin
       }}>
-        <Typography variant="h5" sx={{ color: '#333', fontWeight: 600 }}>
-          Edit Profile
-        </Typography>
+        {/* Back Button */}
         <Button
-          variant="outlined"
-          color="error"
-          onClick={handleLogout}
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
           sx={{
+            position: 'absolute',
+            top: 24,
+            left: 24,
+            color: '#4CAF50',
+            fontWeight: 600,
+            bgcolor: 'transparent',
+            '&:hover': { bgcolor: '#f1f5f9', color: '#388e3c' },
             textTransform: 'none',
-            borderColor: '#DC2626',
-            color: '#DC2626',
-            '&:hover': {
-              bgcolor: '#FEE2E2',
-              borderColor: '#DC2626',
-            },
           }}
         >
-          Logout
+          Back
         </Button>
-      </Box>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
-          <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-            First Name
+        {/* Header with Avatar */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4, mt: 2 }}>
+          <AccountCircleIcon sx={{ fontSize: 64, color: '#4CAF50', mb: 1 }} />
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 0.5 }}>
+            Edit Profile
           </Typography>
-          <TextField
-            fullWidth
-            name="firstName"
-            value={formData.firstName}
-            onChange={handleChange}
-            variant="outlined"
-            size="small"
-            sx={{ bgcolor: 'white' }}
-          />
-        </Grid>
-
-        <Grid item xs={12} sm={6}>
-          <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-            Last Name
+          <Typography sx={{ color: '#64748b', fontSize: 16 }}>
+            Update your personal information
           </Typography>
-          <TextField
-            fullWidth
-            name="lastName"
-            value={formData.lastName}
-            onChange={handleChange}
-            variant="outlined"
-            size="small"
-            sx={{ bgcolor: 'white' }}
-          />
+        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px', fontWeight: 600 }}>
+              First Name
+            </Typography>
+            <TextField
+              fullWidth
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              variant="outlined"
+              size="medium"
+              sx={{ bgcolor: '#f8fafc', borderRadius: 2, '& .MuiOutlinedInput-root': { fontWeight: 500 } }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px', fontWeight: 600 }}>
+              Last Name
+            </Typography>
+            <TextField
+              fullWidth
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              variant="outlined"
+              size="medium"
+              sx={{ bgcolor: '#f8fafc', borderRadius: 2, '& .MuiOutlinedInput-root': { fontWeight: 500 } }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px', fontWeight: 600 }}>
+              Email
+            </Typography>
+            <TextField
+              fullWidth
+              name="email"
+              type="email"
+              value={formData.email}
+              variant="outlined"
+              size="medium"
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: '#f1f5f9', borderRadius: 2, '& .MuiOutlinedInput-root': { fontWeight: 500 } }}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              onClick={handleSave}
+              disabled={loading}
+              sx={{
+                bgcolor: '#4CAF50',
+                '&:hover': { bgcolor: '#388e3c' },
+                textTransform: 'none',
+                px: 4,
+                py: 1.5,
+                mt: 2,
+                fontWeight: 700,
+                fontSize: 18,
+                borderRadius: 2,
+                boxShadow: '0 2px 8px rgba(76,175,80,0.08)'
+              }}
+              fullWidth
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Grid>
         </Grid>
-
-        {/* Email field - assuming not editable via this form */}
-        <Grid item xs={12}>
-          <Typography sx={{ mb: 1, color: '#374151', fontSize: '14px' }}>
-            Email
-          </Typography>
-          <TextField
-            fullWidth
-            name="email"
-            type="email"
-            value={formData.email}
-            // onChange={handleChange} // Email is likely not editable here
-            variant="outlined"
-            size="small"
-            InputProps={{ readOnly: true }} // Make email read-only
-            sx={{ bgcolor: '#f1f5f9' }} // Style read-only field differently
-          />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={loading}
-            sx={{
-              bgcolor: '#4CAF50',
-              '&:hover': {
-                bgcolor: '#45a049',
-              },
-              textTransform: 'none',
-              px: 4,
-              py: 1,
-              mt: 2, // Added top margin
-            }}
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </Grid>
-      </Grid>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
           onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
     </Box>
   );
 };

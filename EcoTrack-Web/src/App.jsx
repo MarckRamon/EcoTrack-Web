@@ -16,6 +16,7 @@ import Trucks from './Trucks';
 import AuthSynchronizer from './components/AuthSynchronizer';
 import './App.css';
 import { Box } from '@mui/material';
+import BarangayPage from './BarangayPage';
 
 // Protected route component that checks authentication and role
 const ProtectedRoute = ({ children }) => {
@@ -142,6 +143,13 @@ function App() {
           <Route path="/trucks" element={
             <RoleBasedRoute allowedRoles={['admin']}>
               <Trucks />
+            </RoleBasedRoute>
+          } />
+
+          {/* Barangay Management Route */}
+          <Route path="/barangays" element={
+            <RoleBasedRoute allowedRoles={['admin']}>
+              <BarangayPage />
             </RoleBasedRoute>
           } />
 

@@ -178,17 +178,17 @@ const JobOrderRequest = () => {
 
   return (
     <AdminLayout>
-      <Box sx={{ p: 3, maxWidth: '100%' }}>
-        <Typography variant="h5" sx={{ mb: 3, fontWeight: 600, color: '#333' }}>
-          Job Order Request
-        </Typography>
-
-        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 600, color: '#333' }}>
+      <Box sx={{ p: { xs: 1, md: 4 }, maxWidth: '100%', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', letterSpacing: 1 }}>
+            Job Order Request
+          </Typography>
+        </Box>
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>
             Job Orders Request
           </Typography>
-
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <TextField
               placeholder="Search"
               size="small"
@@ -239,10 +239,9 @@ const JobOrderRequest = () => {
             </Box>
           </Box>
         </Box>
-
-        <TableContainer component={Paper} sx={{ boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderRadius: 2 }}>
+        <TableContainer component={Paper} sx={{ boxShadow: '0 4px 24px rgba(30,41,59,0.08)', borderRadius: 3, overflow: 'hidden' }}>
           <Table>
-            <TableHead>
+            <TableHead sx={{ bgcolor: '#f1f5f9' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Name</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Receipt No</TableCell>
@@ -255,40 +254,38 @@ const JobOrderRequest = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredOrders
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.name}</TableCell>
-                    <TableCell>{order.receiptNo}</TableCell>
-                    <TableCell>{order.phoneNo}</TableCell>
-                    <TableCell>{order.location}</TableCell>
-                    <TableCell>{order.totalAmount !== '' ? `₱${Number(order.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}</TableCell>
-                    <TableCell>{order.paymentMethod}</TableCell>
-                    <TableCell>
-                      {order.driverId ? (
-                        driverMap[order.driverId]
-                          ? `${driverMap[order.driverId].firstName} ${driverMap[order.driverId].lastName}`
-                          : order.driverId
-                      ) : (
-                        <Button variant="contained" size="small" onClick={() => handleOpenAssignModal(order.id)}>
-                          Assign
-                        </Button>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {order.truckId ? (
-                        truckMap[order.truckId]
-                          ? `${truckMap[order.truckId].plateNumber} (${truckMap[order.truckId].make} ${truckMap[order.truckId].model})`
-                          : order.truckId
-                      ) : (
-                        <Button variant="contained" size="small" onClick={() => handleOpenAssignTruckModal(order.id)}>
-                          Assign
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((order) => (
+                <TableRow key={order.id} hover sx={{ transition: 'background 0.2s', '&:hover': { bgcolor: '#e0f2fe' } }}>
+                  <TableCell>{order.name}</TableCell>
+                  <TableCell>{order.receiptNo}</TableCell>
+                  <TableCell>{order.phoneNo}</TableCell>
+                  <TableCell>{order.location}</TableCell>
+                  <TableCell>{order.totalAmount !== '' ? `₱${Number(order.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}</TableCell>
+                  <TableCell>{order.paymentMethod}</TableCell>
+                  <TableCell>
+                    {order.driverId ? (
+                      driverMap[order.driverId]
+                        ? `${driverMap[order.driverId].firstName} ${driverMap[order.driverId].lastName}`
+                        : order.driverId
+                    ) : (
+                      <Button variant="contained" size="small" onClick={() => handleOpenAssignModal(order.id)}>
+                        Assign
+                      </Button>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {order.truckId ? (
+                      truckMap[order.truckId]
+                        ? `${truckMap[order.truckId].plateNumber} (${truckMap[order.truckId].make} ${truckMap[order.truckId].model})`
+                        : order.truckId
+                    ) : (
+                      <Button variant="contained" size="small" onClick={() => handleOpenAssignTruckModal(order.id)}>
+                        Assign
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
           <TablePagination
@@ -299,12 +296,13 @@ const JobOrderRequest = () => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{ bgcolor: '#f8fafc', borderTop: '1px solid #e5e7eb' }}
           />
         </TableContainer>
       </Box>
 
       {/* Assign Driver Modal */}
-      <Dialog open={assignModalOpen} onClose={handleCloseAssignModal}>
+      <Dialog open={assignModalOpen} onClose={handleCloseAssignModal} PaperProps={{ sx: { borderRadius: 3, p: 2 } }}>
         <DialogTitle>Assign Driver</DialogTitle>
         <DialogContent>
           {assignLoading ? (
@@ -328,7 +326,7 @@ const JobOrderRequest = () => {
       </Dialog>
 
       {/* Add new Assign Truck Modal */}
-      <Dialog open={assignTruckModalOpen} onClose={handleCloseAssignTruckModal}>
+      <Dialog open={assignTruckModalOpen} onClose={handleCloseAssignTruckModal} PaperProps={{ sx: { borderRadius: 3, p: 2 } }}>
         <DialogTitle>Assign Truck</DialogTitle>
         <DialogContent>
           {assignTruckLoading ? (
