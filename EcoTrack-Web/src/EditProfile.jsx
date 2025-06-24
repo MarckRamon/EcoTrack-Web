@@ -284,6 +284,30 @@ const EditProfile = () => {
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>
           </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                borderColor: '#ef4444',
+                color: '#ef4444',
+                '&:hover': { 
+                  borderColor: '#dc2626',
+                  bgcolor: '#fee2e2',
+                },
+                textTransform: 'none',
+                px: 4,
+                py: 1.5,
+                mt: 1,
+                fontWeight: 600,
+                fontSize: 16,
+                borderRadius: 2,
+              }}
+              fullWidth
+            >
+              Logout
+            </Button>
+          </Grid>
         </Grid>
         <Snackbar
           open={snackbar.open}

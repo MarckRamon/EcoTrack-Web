@@ -58,7 +58,7 @@ const decodeToken = (token) => {
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
-    emailOrPhone: '',
+    email: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -111,7 +111,7 @@ const AdminLogin = () => {
 
     try {
       const response = await api.post('/users/login', {
-        email: credentials.emailOrPhone.trim(),
+        email: credentials.email.trim(),
         password: credentials.password
       });
 
@@ -262,15 +262,17 @@ const AdminLogin = () => {
         <Paper
           elevation={6}
           sx={{
-            padding: '40px',
+            p: { xs: 3, sm: 5 },
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
-            borderRadius: '12px',
             width: '100%',
-            maxWidth: '400px',
-            bgcolor: 'white', // Explicitly set background color
+            maxWidth: 420,
+            borderRadius: 5,
+            bgcolor: 'white',
+            border: '1.5px solid #e3e8ee',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.12)',
+            position: 'relative',
           }}
         >
           <Box
@@ -282,8 +284,30 @@ const AdminLogin = () => {
             alt="GrabTrash Logo"
             src="/loginlogo.jpg"
           />
-          <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
-            Welcome back
+          <Typography
+            component="h1"
+            variant="h4"
+            sx={{
+              mb: 1.5,
+              fontWeight: 'bold',
+              letterSpacing: 1,
+              color: 'primary.main',
+              textShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}
+          >
+            Welcome Back!
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              mb: 3,
+              color: 'text.secondary',
+              fontWeight: 400,
+              fontSize: '1rem',
+              textAlign: 'center',
+            }}
+          >
+            Please sign in to your account
           </Typography>
           <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             {error && (
@@ -293,12 +317,12 @@ const AdminLogin = () => {
               margin="normal"
               required
               fullWidth
-              id="emailOrPhone"
-              label="Email or phone number"
-              name="emailOrPhone"
+              id="email"
+              label="Email"
+              name="email"
               autoComplete="email"
               autoFocus
-              value={credentials.emailOrPhone}
+              value={credentials.email}
               onChange={handleChange}
             />
             <TextField
@@ -313,23 +337,6 @@ const AdminLogin = () => {
               value={credentials.password}
               onChange={handleChange}
             />
-            <Link
-              component={RouterLink}
-              to="/forgot-password"
-              sx={{
-                display: 'block',
-                textAlign: 'left',
-                mb: 2,
-                color: '#111827',
-                textDecoration: 'none',
-                fontSize: '13px',
-                '&:hover': {
-                  textDecoration: 'underline',
-                }
-              }}
-            >
-              Forget your password
-            </Link>
             <Button
               type="submit"
               fullWidth

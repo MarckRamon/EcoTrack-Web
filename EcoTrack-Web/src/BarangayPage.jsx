@@ -214,9 +214,6 @@ const BarangayPage = () => {
                     <Button variant="outlined" size="small" color="secondary" onClick={() => handleReactivateBarangay(barangay.barangayId)} disabled={barangay.active === true || barangay.active === 'true'}>
                       Reactivate
                     </Button>
-                    <Button variant="outlined" size="small" color="warning" onClick={() => handleDeactivateBarangay(barangay.barangayId)} disabled={barangay.active === false || barangay.active === 'false'} sx={{ ml: 1 }}>
-                      Deactivate
-                    </Button>
                     <Button variant="outlined" size="small" color="error" onClick={() => openDeleteDialog(barangay)} disabled={!(barangay.active === true || barangay.active === 'true')} sx={{ ml: 1 }}>
                       Delete
                     </Button>

@@ -305,7 +305,7 @@ const EditPrivateEntityPin = () => {
     >
       {/* Inner Box for Centering Content */}
       <Box sx={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <Typography variant="h4" sx={{ mb: 3 }}>Private Entity Collection Points</Typography>
+        <Typography variant="h4" sx={{ mb: 3 }}>Private Entity Address</Typography>
 
         {/* Back Button */}
         <Button
