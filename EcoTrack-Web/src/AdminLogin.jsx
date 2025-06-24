@@ -291,7 +291,7 @@ const AdminLogin = () => {
               mb: 1.5,
               fontWeight: 'bold',
               letterSpacing: 1,
-              color: 'primary.main',
+              color: '#2ecc40',
               textShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}
           >
@@ -324,6 +324,16 @@ const AdminLogin = () => {
               autoFocus
               value={credentials.email}
               onChange={handleChange}
+              InputLabelProps={{
+                sx: {
+                  '&.Mui-focused': {
+                    color: '#2ecc40',
+                  },
+                  '&:hover': {
+                    color: '#2ecc40',
+                  },
+                },
+              }}
             />
             <TextField
               margin="normal"
@@ -336,12 +346,33 @@ const AdminLogin = () => {
               autoComplete="current-password"
               value={credentials.password}
               onChange={handleChange}
+              InputLabelProps={{
+                sx: {
+                  '&.Mui-focused': {
+                    color: '#2ecc40',
+                  },
+                  '&:hover': {
+                    color: '#2ecc40',
+                  },
+                },
+              }}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{
+                mt: 3,
+                mb: 2,
+                backgroundColor: '#2ecc40',
+                color: '#fff',
+                '&:hover': {
+                  backgroundColor: '#27ae38',
+                },
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                letterSpacing: 1,
+              }}
               disabled={loading}
             >
               {loading ? <CircularProgress size={24} /> : 'Log in'}
