@@ -50,7 +50,9 @@ const CollectionSchedule = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
+  // Remove searchTerm state
+  // const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBarangay, setSelectedBarangay] = useState('all'); // NEW: barangay filter
 
   const [allowed, setAllowed] = useState(null);
 
@@ -118,18 +120,18 @@ const CollectionSchedule = () => {
     setNotification(prev => ({ ...prev, open: false }));
   };
 
-  // Handle search input change
-  const handleSearchChange = (event) => {
+  // Handle barangay filter change
+  const handleBarangayChange = (event) => {
     const value = event.target.value;
-    setSearchTerm(value);
-    applyFilters(allSchedules, value);
+    setSelectedBarangay(value);
+    applyFilters(allSchedules, value); // pass barangay
   };
 
-  // Apply filters to schedules (now only based on search term and showing only active schedules)
-  const applyFilters = (scheduleList, search) => {
+  // Apply filters to schedules (now only based on search term, barangay, and showing only active schedules)
+  const applyFilters = (scheduleList, barangay) => {
     if (!scheduleList || !Array.isArray(scheduleList)) return;
     
-    console.log(`Applying search filter: ${search}`);
+    console.log(`Applying barangay filter: ${barangay}`);
     console.log(`Input schedules: ${scheduleList.length}`);
     
     // Start with only active schedules (default behavior)
@@ -139,17 +141,24 @@ const CollectionSchedule = () => {
       schedule.active === true ||
       schedule.active === "true");
     
+    // Always filter by barangay
+    if (barangay) {
+      filtered = filtered.filter(schedule =>
+        schedule.barangayId === barangay || schedule.barangayName === barangay
+      );
+    }
+    
     console.log(`Active schedules count: ${filtered.length}`);
     
     // Apply search term filter if exists
-    if (search && search.trim() !== '') {
-      const searchLower = search.toLowerCase().trim();
-      filtered = filtered.filter(schedule => 
-        (schedule.barangayName && schedule.barangayName.toLowerCase().includes(searchLower)) ||
-        (schedule.notes && schedule.notes.toLowerCase().includes(searchLower)) ||
-        (schedule.wasteType && schedule.wasteType.toLowerCase().includes(searchLower))
-      );
-    }
+    // if (search && search.trim() !== '') {
+    //   const searchLower = search.toLowerCase().trim();
+    //   filtered = filtered.filter(schedule => 
+    //     (schedule.barangayName && schedule.barangayName.toLowerCase().includes(searchLower)) ||
+    //     (schedule.notes && schedule.notes.toLowerCase().includes(searchLower)) ||
+    //     (schedule.wasteType && schedule.wasteType.toLowerCase().includes(searchLower))
+    //   );
+    // }
     
     console.log(`Filtered schedules: ${filtered.length}`);
     setSchedules(filtered);
@@ -168,6 +177,12 @@ const CollectionSchedule = () => {
         console.log(`📊 Retrieved ${barangayData.length} barangays for the dropdown:`, 
           barangayData.slice(0, 3).map(b => b.name || b.barangayName));
         setBarangays(barangayData);
+        // If selectedBarangay is no longer valid or is 'all', set to first barangay
+        if (
+          !barangayData.some(b => b.barangayId === selectedBarangay || b.name === selectedBarangay)
+        ) {
+          setSelectedBarangay(barangayData[0]?.barangayId || '');
+        }
       } catch (error) {
         console.error('Error fetching barangays:', error);
         showNotification(
@@ -197,7 +212,7 @@ const CollectionSchedule = () => {
         setAllSchedules(scheduleData);
         
         // Apply current filters - now only showing active schedules by default
-        applyFilters(scheduleData, searchTerm);
+        applyFilters(scheduleData, selectedBarangay);
         
         if (scheduleData.length === 0) {
           setError('No collection schedules found. Please add schedules using the Add Schedule button.');
@@ -459,6 +474,12 @@ const CollectionSchedule = () => {
     }
   }, [navigate]);
 
+  // In useEffect, when barangays or schedules change, re-apply filters
+  useEffect(() => {
+    applyFilters(allSchedules, selectedBarangay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSchedules, selectedBarangay]);
+
   if (allowed === null) return null;
 
   // Loading state
@@ -613,32 +634,29 @@ const CollectionSchedule = () => {
           </ButtonGroup>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Barangay Filter Dropdown */}
             <TextField
-              placeholder="Search"
+              select
+              label="Barangay"
               size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ 
-                width: 200,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '8px'
-                }
-              }}
-            />
+              value={selectedBarangay}
+              onChange={handleBarangayChange}
+              sx={{ width: 180, mr: 2, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
+              SelectProps={{ native: true }}
+            >
+              {barangays.map((b) => (
+                <option key={b.barangayId || b.id} value={b.barangayId || b.name}>
+                  {b.name}
+                </option>
+              ))}
+            </TextField>
           </Box>
         </Box>
 
         {/* Empty message when filtered results have no schedules */}
         {schedules.length === 0 && allSchedules.length > 0 && (
           <Alert severity="info" sx={{ mb: 3, borderRadius: '8px' }}>
-            No active schedules found{searchTerm ? ` matching "${searchTerm}"` : ''}.
+            No active schedules found{selectedBarangay !== 'all' ? ` in ${selectedBarangay}` : ''}.
           </Alert>
         )}
 
