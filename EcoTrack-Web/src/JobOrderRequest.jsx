@@ -249,7 +249,6 @@ const JobOrderRequest = () => {
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Location</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Amount</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Payment Method</TableCell>
-                <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Assigned Driver</TableCell>
                 <TableCell sx={{ fontWeight: 600, color: '#374151' }}>Assigned Truck</TableCell>
               </TableRow>
             </TableHead>
@@ -262,17 +261,6 @@ const JobOrderRequest = () => {
                   <TableCell>{order.location}</TableCell>
                   <TableCell>{order.totalAmount !== '' ? `₱${Number(order.totalAmount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}</TableCell>
                   <TableCell>{order.paymentMethod}</TableCell>
-                  <TableCell>
-                    {order.driverId ? (
-                      driverMap[order.driverId]
-                        ? `${driverMap[order.driverId].firstName} ${driverMap[order.driverId].lastName}`
-                        : order.driverId
-                    ) : (
-                      <Button variant="contained" size="small" onClick={() => handleOpenAssignModal(order.id)}>
-                        Assign
-                      </Button>
-                    )}
-                  </TableCell>
                   <TableCell>
                     {order.truckId ? (
                       truckMap[order.truckId]
@@ -301,29 +289,6 @@ const JobOrderRequest = () => {
         </TableContainer>
       </Box>
 
-      {/* Assign Driver Modal */}
-      <Dialog open={assignModalOpen} onClose={handleCloseAssignModal} PaperProps={{ sx: { borderRadius: 3, p: 2 } }}>
-        <DialogTitle>Assign Driver</DialogTitle>
-        <DialogContent>
-          {assignLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <List>
-              {drivers.length === 0 && <ListItem>No drivers found.</ListItem>}
-              {drivers.map(driver => (
-                <ListItem button key={driver.userId} onClick={() => handleAssignDriver(driver.userId)}>
-                  <ListItemText primary={`${driver.firstName} ${driver.lastName}`} secondary={driver.email} />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAssignModal}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
 
       {/* Add new Assign Truck Modal */}
       <Dialog open={assignTruckModalOpen} onClose={handleCloseAssignTruckModal} PaperProps={{ sx: { borderRadius: 3, p: 2 } }}>

@@ -302,4 +302,47 @@ api.fetchAllBarangays = async () => {
   return response.data;
 };
 
+/**
+ * Assign a driver to a truck
+ * @param {string} truckId - ID of the truck
+ * @param {string} driverId - ID of the driver
+ * @returns {Promise<Object>} Updated truck
+ */
+api.assignDriverToTruck = async (truckId, driverId) => {
+  const response = await api.post('/trucks/assign-driver', {
+    truckId,
+    driverId,
+  });
+  return response.data;
+};
+
+/**
+ * Remove a driver from a truck
+ * @param {string} truckId - ID of the truck
+ * @returns {Promise<Object>} Updated truck
+ */
+api.removeDriverFromTruck = async (truckId) => {
+  const response = await api.delete(`/trucks/remove-driver/${truckId}`);
+  return response.data;
+};
+
+/**
+ * Fetch unassigned trucks
+ * @returns {Promise<Array>} Array of unassigned trucks
+ */
+api.fetchUnassignedTrucks = async () => {
+  const response = await api.get('/trucks/unassigned');
+  return response.data;
+};
+
+/**
+ * Fetch trucks assigned to a specific driver
+ * @param {string} driverId - ID of the driver
+ * @returns {Promise<Array>} Array of trucks assigned to the driver
+ */
+api.fetchTrucksByDriver = async (driverId) => {
+  const response = await api.get(`/trucks/driver/${driverId}`);
+  return response.data;
+};
+
 export default api; 
