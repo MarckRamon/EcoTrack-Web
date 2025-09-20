@@ -338,6 +338,8 @@ const CollectionSchedule = () => {
     schedules.forEach(schedule => {
       if (!schedule) return;
       
+      console.log(`🔍 Processing schedule: ${schedule.scheduleId}, isRecurring: ${schedule.isRecurring}, recurringDay: ${schedule.recurringDay}, recurringTime: ${schedule.recurringTime}`);
+      
       try {
         // Handle one-time schedules
         if (schedule.isRecurring !== true && schedule.isRecurring !== "true") {
@@ -377,16 +379,27 @@ const CollectionSchedule = () => {
             if (scheduleDayIndex === currentDayIndex) {
               if (schedule.recurringTime) {
                 try {
-                  // Parse HH:MM format
-                  const [scheduleHour] = schedule.recurringTime.split(':').map(num => parseInt(num, 10));
+                  // Parse HH:MM or HH:MM:SS format
+                  let scheduleHour;
+                  if (schedule.recurringTime.includes(':')) {
+                    const timeParts = schedule.recurringTime.split(':');
+                    scheduleHour = parseInt(timeParts[0], 10);
+                  } else {
+                    // Handle case where time might be in different format
+                    scheduleHour = parseInt(schedule.recurringTime, 10);
+                  }
+                  
+                  console.log(`🔍 Checking recurring schedule: ${schedule.scheduleId} on ${schedule.recurringDay} at ${schedule.recurringTime} (parsed hour: ${scheduleHour}) vs current hour: ${hour}`);
                   
                   if (scheduleHour === hour) {
                     console.log(`✅ Recurring schedule match: ${schedule.scheduleId} on ${schedule.recurringDay} at ${schedule.recurringTime}`);
                     matchingSchedules.push(schedule);
                   }
                 } catch (err) {
-                  console.error('Error parsing time:', err);
+                  console.error('Error parsing recurring time:', err, 'for schedule:', schedule.scheduleId, 'time:', schedule.recurringTime);
                 }
+              } else {
+                console.log(`⚠️ Recurring schedule ${schedule.scheduleId} has no recurringTime field`);
               }
             }
           }
@@ -744,7 +757,7 @@ const CollectionSchedule = () => {
                               <Typography className="time">
                                 {schedule.isRecurring && schedule.recurringTime 
                                   ? formatTimeString(schedule.recurringTime)
-                                  : (new Date(schedule.collectionDateTime)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  : (schedule.collectionDateTime ? new Date(schedule.collectionDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A')}
                               </Typography>
                               <Typography className="location">
                                 {schedule.barangayName || 'Unknown Barangay'}
@@ -757,6 +770,16 @@ const CollectionSchedule = () => {
                                   mt: 0.5
                                 }}>
                                   INACTIVE
+                                </Typography>
+                              )}
+                              {schedule.isRecurring && (
+                                <Typography sx={{ 
+                                  fontSize: '9px', 
+                                  color: '#666',
+                                  fontWeight: 'bold',
+                                  mt: 0.5
+                                }}>
+                                  🔄 RECURRING
                                 </Typography>
                               )}
                               {schedule.notes && (
@@ -860,6 +883,7 @@ const CollectionSchedule = () => {
         schedule={selectedSchedule}
         isEdit={isEditMode}
         barangays={barangays}
+        existingSchedules={allSchedules}
       />
 
       {/* Notification */}

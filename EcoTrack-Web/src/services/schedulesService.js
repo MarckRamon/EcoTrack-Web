@@ -79,21 +79,31 @@ const schedulesService = {
       console.log(`📋 Successfully retrieved ${schedules.length} schedules from API`);
       
       // Format the schedules to match the expected format
-      const formattedSchedules = schedules.map(schedule => ({
-        id: schedule.scheduleId,
-        scheduleId: schedule.scheduleId,
-        barangayId: schedule.barangayId,
-        barangayName: schedule.barangayName,
-        collectionDateTime: schedule.collectionDateTime,
-        isActive: schedule.active !== undefined ? schedule.active : true,
-        isRecurring: schedule.recurring || false,
-        notes: schedule.notes || '',
-        recurringDay: schedule.recurringDay || null,
-        recurringTime: schedule.recurringTime || null,
-        wasteType: schedule.wasteType || 'NON_BIODEGRADABLE',
-        createdAt: schedule.createdAt,
-        updatedAt: schedule.updatedAt
-      }));
+      const formattedSchedules = schedules.map(schedule => {
+        console.log(`📋 Processing schedule from API:`, {
+          scheduleId: schedule.scheduleId,
+          isRecurring: schedule.isRecurring,
+          recurring: schedule.recurring,
+          recurringDay: schedule.recurringDay,
+          recurringTime: schedule.recurringTime
+        });
+        
+        return {
+          id: schedule.scheduleId,
+          scheduleId: schedule.scheduleId,
+          barangayId: schedule.barangayId,
+          barangayName: schedule.barangayName,
+          collectionDateTime: schedule.collectionDateTime,
+          isActive: schedule.isActive !== undefined ? schedule.isActive : (schedule.active !== undefined ? schedule.active : true),
+          isRecurring: schedule.isRecurring !== undefined ? schedule.isRecurring : (schedule.recurring !== undefined ? schedule.recurring : false),
+          notes: schedule.notes || '',
+          recurringDay: schedule.recurringDay || null,
+          recurringTime: schedule.recurringTime || null,
+          wasteType: schedule.wasteType || 'NON_BIODEGRADABLE',
+          createdAt: schedule.createdAt,
+          updatedAt: schedule.updatedAt
+        };
+      });
       
       return formattedSchedules;
     } catch (error) {
@@ -154,7 +164,8 @@ const schedulesService = {
         collectionDateTime: scheduleData.collectionDateTime ? 
           new Date(scheduleData.collectionDateTime).toISOString() : null,
         wasteType: scheduleData.wasteType,
-        recurring: scheduleData.isRecurring || false,
+        isRecurring: scheduleData.isRecurring !== undefined ? scheduleData.isRecurring : false,
+        recurring: scheduleData.isRecurring !== undefined ? scheduleData.isRecurring : false,
         recurringDay: scheduleData.recurringDay,
         recurringTime: scheduleData.recurringTime,
         active: scheduleData.isActive !== undefined ? scheduleData.isActive : true,
@@ -162,6 +173,7 @@ const schedulesService = {
       };
       
       console.log('Sending formatted data to API:', formattedData);
+      console.log('Backend will check for duplicates with 1-minute tolerance');
       
       const response = await api.post('/collection-schedules', formattedData);
       
@@ -211,7 +223,8 @@ const schedulesService = {
         collectionDateTime: scheduleData.collectionDateTime ? 
           new Date(scheduleData.collectionDateTime).toISOString() : null,
         wasteType: scheduleData.wasteType,
-        recurring: scheduleData.isRecurring || false,
+        isRecurring: scheduleData.isRecurring !== undefined ? scheduleData.isRecurring : false,
+        recurring: scheduleData.isRecurring !== undefined ? scheduleData.isRecurring : false,
         recurringDay: scheduleData.recurringDay,
         recurringTime: scheduleData.recurringTime,
         active: scheduleData.isActive !== undefined ? scheduleData.isActive : true,

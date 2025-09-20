@@ -19,6 +19,7 @@ import {
   Tooltip,
   DialogContentText,
   Divider,
+  Alert,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -29,7 +30,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import schedulesService from '../services/schedulesService';
 
-const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [] }) => {
+const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [], existingSchedules = [] }) => {
   const [formData, setFormData] = useState({
     scheduleId: '',
     barangayId: '',
@@ -124,6 +125,14 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
         [name]: ''
       }));
     }
+    
+    // Clear duplicate error when form changes
+    if (errors.duplicate) {
+      setErrors(prev => ({
+        ...prev,
+        duplicate: ''
+      }));
+    }
   };
 
   const handleDateChange = (date) => {
@@ -135,6 +144,13 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
       setErrors(prev => ({
         ...prev,
         collectionDateTime: ''
+      }));
+    }
+    // Clear duplicate error when date changes
+    if (errors.duplicate) {
+      setErrors(prev => ({
+        ...prev,
+        duplicate: ''
       }));
     }
   };
@@ -161,14 +177,31 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
         recurringTime: timeString
       }));
     }
+    
+    // Clear duplicate error when time changes
+    if (errors.duplicate) {
+      setErrors(prev => ({
+        ...prev,
+        duplicate: ''
+      }));
+    }
   };
 
   const handleSwitchChange = (e) => {
     const { name, checked } = e.target;
+    console.log(`🔄 Switch changed: ${name} = ${checked}`);
     setFormData(prev => ({
       ...prev,
       [name]: checked
     }));
+    
+    // Clear duplicate error when switch changes
+    if (errors.duplicate) {
+      setErrors(prev => ({
+        ...prev,
+        duplicate: ''
+      }));
+    }
   };
 
   // Handle delete button click (soft delete)
@@ -240,6 +273,56 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
     }
   };
 
+  // Check for potential duplicate schedules (client-side preview)
+  const checkForDuplicateSchedule = () => {
+    if (!formData.barangayId) return false;
+    
+    const selectedBarangay = barangays.find(b => b.barangayId === formData.barangayId);
+    if (!selectedBarangay) return false;
+    
+    // Check for potential duplicates in existing schedules
+    const duplicateSchedules = existingSchedules.filter(existingSchedule => {
+      // Skip the current schedule if we're editing
+      if (isEdit && existingSchedule.scheduleId === formData.scheduleId) {
+        return false;
+      }
+      
+      // Check if it's the same barangay
+      if (existingSchedule.barangayId !== formData.barangayId) {
+        return false;
+      }
+      
+      // Check if it's the same waste type
+      if (existingSchedule.wasteType !== formData.wasteType) {
+        return false;
+      }
+      
+      // For recurring schedules
+      if (formData.isRecurring) {
+        return existingSchedule.isRecurring && 
+               existingSchedule.recurringDay === formData.recurringDay &&
+               existingSchedule.recurringTime === formData.recurringTime;
+      }
+      
+      // For one-time schedules - check exact match (backend will handle 1-minute tolerance)
+      if (!formData.isRecurring && formData.collectionDateTime) {
+        const existingDate = new Date(existingSchedule.collectionDateTime);
+        const newDate = new Date(formData.collectionDateTime);
+        
+        // Check if it's the same date and time
+        return existingDate.getFullYear() === newDate.getFullYear() &&
+               existingDate.getMonth() === newDate.getMonth() &&
+               existingDate.getDate() === newDate.getDate() &&
+               existingDate.getHours() === newDate.getHours() &&
+               existingDate.getMinutes() === newDate.getMinutes();
+      }
+      
+      return false;
+    });
+    
+    return duplicateSchedules.length > 0;
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
@@ -257,6 +340,11 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
     
     if (formData.isRecurring && !formData.recurringTime) {
       newErrors.recurringTime = 'Time is required';
+    }
+    
+    // Check for potential duplicate schedules (client-side preview)
+    if (checkForDuplicateSchedule()) {
+      newErrors.duplicate = '⚠️ A similar schedule already exists. The backend will perform final validation with 1-minute tolerance.';
     }
     
     setErrors(newErrors);
@@ -296,15 +384,34 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
         scheduleData.recurringTime = formData.recurringTime;
         // Set collectionDateTime to a default date for API requirements
         scheduleData.collectionDateTime = new Date();
+        // Ensure these fields are explicitly set for recurring schedules
+        scheduleData.isRecurring = true;
+        scheduleData.recurring = true;
       } else {
         // Format the date properly as a Date object for API
         scheduleData.collectionDateTime = formData.collectionDateTime;
         // Set recurring fields to null or default values
         scheduleData.recurringDay = null;
         scheduleData.recurringTime = null;
+        // Ensure these fields are explicitly set for one-time schedules
+        scheduleData.isRecurring = false;
+        scheduleData.recurring = false;
       }
       
       console.log('Submitting schedule data:', scheduleData);
+      console.log('Form data before submission:', {
+        isRecurring: formData.isRecurring,
+        recurringDay: formData.recurringDay,
+        recurringTime: formData.recurringTime,
+        collectionDateTime: formData.collectionDateTime
+      });
+      console.log('Final schedule data:', {
+        isRecurring: scheduleData.isRecurring,
+        recurring: scheduleData.recurring,
+        recurringDay: scheduleData.recurringDay,
+        recurringTime: scheduleData.recurringTime,
+        collectionDateTime: scheduleData.collectionDateTime
+      });
       
       if (isEdit && schedule && schedule.scheduleId) {
         console.log(`Updating existing schedule: ${schedule.scheduleId}`);
@@ -319,6 +426,20 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
       onClose(true); // Close dialog and indicate success
     } catch (error) {
       console.error('Error saving schedule:', error);
+      
+      // Handle backend duplicate validation error
+      if (error.response && error.response.status === 400) {
+        const errorData = error.response.data;
+        if (errorData && errorData.error && errorData.error.includes('schedule already exists')) {
+          setErrors(prev => ({
+            ...prev,
+            duplicate: '❌ ' + errorData.error + ' Please choose a different time or date.',
+            submit: ''
+          }));
+          return; // Don't show generic error for duplicate
+        }
+      }
+      
       setErrors(prev => ({
         ...prev,
         submit: `Failed to save schedule: ${error.message || 'Unknown error'}`
@@ -565,6 +686,12 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
               </FormHelperText>
             </FormControl>
             
+            {errors.duplicate && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                {errors.duplicate}
+              </Alert>
+            )}
+            
             {errors.submit && (
               <Typography color="error" variant="body2" sx={{ mt: 2 }}>
                 {errors.submit}
@@ -579,7 +706,7 @@ const ScheduleDialog = ({ open, onClose, schedule, isEdit = false, barangays = [
             onClick={handleSubmit} 
             variant="contained" 
             color="primary"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!errors.duplicate}
           >
             {isSubmitting ? 'Saving...' : 'Save'}
           </Button>
